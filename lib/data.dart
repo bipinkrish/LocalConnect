@@ -8,6 +8,13 @@ class DiscoveredDevice {
   DiscoveredDevice(this.ip, this.deviceName);
 }
 
+class Message {
+  final String text;
+  final bool you;
+
+  Message(this.text, this.you);
+}
+
 Future<String> getLocalIP() async {
   List<NetworkInterface> interfaces =
       await NetworkInterface.list(type: InternetAddressType.IPv4);

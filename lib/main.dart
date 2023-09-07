@@ -1,19 +1,23 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localconnect/chat.dart';
 import 'package:localconnect/data.dart';
+import 'package:localconnect/providers.dart';
 import 'package:localconnect/socket.dart';
 import 'package:network_discovery/network_discovery.dart';
 
 void main() {
-  // WidgetsFlutterBinding.ensureInitialized();
   runApp(
-    MaterialApp(
-      home: const HomePage(),
-      themeMode: ThemeMode.system,
-      theme: ThemeData.light(),
-      darkTheme: ThemeData.dark(),
+    ProviderScope(
+      parent: providerContainer,
+      child: MaterialApp(
+        home: const HomePage(),
+        themeMode: ThemeMode.system,
+        theme: ThemeData.light(),
+        darkTheme: ThemeData.dark(),
+      ),
     ),
   );
 }
@@ -79,10 +83,15 @@ class _HomePageState extends State<HomePage> {
       if (isAccepted) {
         serverSocket?.close();
         discoveryTimer!.cancel();
+        final notifier = providerContainer.read(chatMessagesProvider.notifier);
+        notifier.resetState();
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (context) {
-              return ChatScreen(peer: peer);
+              return ChatScreen(
+                peer: peer,
+                port: port,
+              );
             },
           ),
         );
@@ -99,11 +108,14 @@ class _HomePageState extends State<HomePage> {
   void acceptCallback(DiscoveredDevice accpeer) {
     serverSocket?.close();
     discoveryTimer!.cancel();
+    final notifier = providerContainer.read(chatMessagesProvider.notifier);
+    notifier.resetState();
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) {
           return ChatScreen(
             peer: accpeer,
+            port: port,
           );
         },
       ),

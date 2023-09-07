@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:localconnect/data.dart';
+import 'package:localconnect/providers.dart';
 
 void getAcceptAns(Socket client, BuildContext context, String device,
     ServerSocket? serverSocket, Function accCallback) {
@@ -55,6 +56,11 @@ void startServerSocket(ServerSocket? serverSocket, String localIP, int port,
         getAcceptAns(
             clientSocket, context, parts[1], serverSocket, accCallback);
       }
+      if (parts[0] == 'MESSAGE') {
+        final message = parts[1];
+        final chatMessagesNotifier = providerContainer.read(chatMessagesProvider.notifier);
+        chatMessagesNotifier.addMessage(message, false);
+      }
     });
   });
 }
@@ -84,6 +90,15 @@ void askAccept(String rec, int port, String device, Function setAccAns) {
       clientSocket.close();
       setAccAns(response);
     }, onDone: () {}, onError: (error) {});
+  }).catchError((error) {
+    debugPrint('Connection error: $error');
+  });
+}
+
+void sendMessage(String party, int port, String msg) {
+  Socket.connect(party, port).then((clientSocket) {
+    String askRequest = 'MESSAGE|$msg';
+    clientSocket.add(Uint8List.fromList(askRequest.codeUnits));
   }).catchError((error) {
     debugPrint('Connection error: $error');
   });

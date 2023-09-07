@@ -39,10 +39,11 @@ dependencies:
   # json_rpc_2: ^3.0.2
   # web_socket_channel: ^2.4.0
 
-  #simple_peer: ^0.0.13
-  peerdart: ^0.5.3
+  # simple_peer: ^0.0.13
+  # peerdart: ^0.5.3
   network_discovery: ^1.0.0
   device_info_plus: ^9.0.3
+  flutter_riverpod: ^2.4.0
   
 
 dev_dependencies:
