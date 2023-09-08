@@ -14,8 +14,7 @@ void main() {
       parent: providerContainer,
       child: MaterialApp(
         home: const HomePage(),
-        themeMode: ThemeMode.system,
-        theme: ThemeData.light(),
+        themeMode: ThemeMode.dark,
         darkTheme: ThemeData.dark(),
       ),
     ),
@@ -33,7 +32,7 @@ class _HomePageState extends State<HomePage> {
   bool isAccepted = false;
   bool isRequesting = false;
   late DiscoveredDevice peer;
-
+  String doa = "#FF6E40";
   Timer? discoveryTimer;
 
   List<DiscoveredDevice> discoveredDevices = [];
@@ -81,20 +80,7 @@ class _HomePageState extends State<HomePage> {
       });
       Navigator.of(context).pop();
       if (isAccepted) {
-        serverSocket?.close();
-        discoveryTimer!.cancel();
-        final notifier = providerContainer.read(chatMessagesProvider.notifier);
-        notifier.resetState();
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) {
-              return ChatScreen(
-                peer: peer,
-                port: port,
-              );
-            },
-          ),
-        );
+        acceptCallback(peer);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -149,7 +135,7 @@ class _HomePageState extends State<HomePage> {
               padding: const EdgeInsets.only(top: 50, bottom: 10),
               child: Text(
                 "$localName Serving on $localIP:$port",
-                style: const TextStyle(color: Colors.green),
+                style: const TextStyle(color: Colors.deepOrangeAccent),
               ),
             ),
           ),

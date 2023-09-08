@@ -1,4 +1,4 @@
-# localconnect
+# Local Connect
 
 A new Flutter project.
 
