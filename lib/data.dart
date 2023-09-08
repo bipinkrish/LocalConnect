@@ -18,7 +18,15 @@ class Message {
 Future<String> getLocalIP() async {
   List<NetworkInterface> interfaces =
       await NetworkInterface.list(type: InternetAddressType.IPv4);
-
+  for (var interface in interfaces) {
+    if (interface.name == 'Wi-Fi') {
+      for (var address in interface.addresses) {
+        if (address.address.isNotEmpty) {
+          return address.address;
+        }
+      }
+    }
+  }
   return interfaces[0].addresses[0].address;
 }
 

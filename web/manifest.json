@@ -1,6 +1,6 @@
 {
-     "name": "Local Connect",
-     "short_name": "Local Connect",
+     "name": "localconnect",
+     "short_name": "localconnect",
      "start_url": ".",
      "display": "standalone",
      "background_color": "#0175C2",

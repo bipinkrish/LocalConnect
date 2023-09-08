@@ -7,12 +7,18 @@ import 'package:localconnect/data.dart';
 import 'package:localconnect/providers.dart';
 import 'package:localconnect/socket.dart';
 import 'package:network_discovery/network_discovery.dart';
+import 'package:window_size/window_size.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  if (Platform.isWindows || Platform.isLinux || Platform.isWindows) {
+    setWindowTitle("Local Connect");
+  }
   runApp(
     ProviderScope(
       parent: providerContainer,
       child: MaterialApp(
+        title: "Local Connect",
         home: const HomePage(),
         themeMode: ThemeMode.dark,
         darkTheme: ThemeData.dark(),

@@ -44,6 +44,12 @@ dependencies:
   network_discovery: ^1.0.0
   device_info_plus: ^9.0.3
   flutter_riverpod: ^2.4.0
+
+  window_size:
+    git:
+      url: https://github.com/google/flutter-desktop-embedding.git
+      path: plugins/window_size
+      ref: fd519be1e8398c6b6c2062c2447bac960a71bc02
   
 
 dev_dependencies:
@@ -55,10 +61,15 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^2.0.0
+
+  # flutter_lints: ^2.0.0
   # flutter_launcher_icons: ^0.13.1
   # change_app_package_name: ^1.1.0
   # rename_app: ^1.1.0
+  # flutter_app_name: ^0.1.1
+
+flutter_app_name:
+  name: "Local Connect"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -66,10 +77,10 @@ dev_dependencies:
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
-  image_path: "assets/logo.png"
+  image_path: "assets/logo-mob.png"
   min_sdk_android: 21
   remove_alpha_ios: true
-  adaptive_icon_foreground: "assets/logo.png"
+  adaptive_icon_foreground: "assets/logo-mob.png"
   adaptive_icon_background: "#000000"
   windows:
     generate: true
@@ -91,6 +102,7 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/logo.png
+    - assets/logo-mob.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
