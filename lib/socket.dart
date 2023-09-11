@@ -2,46 +2,10 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:localconnect/data.dart';
-import 'package:localconnect/providers.dart';
 
-void getAcceptAns(Socket client, BuildContext context, String device,
-    ServerSocket? serverSocket, Function accCallback) {
-  showDialog(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        title: const Text("Chat Request"),
-        content: Text("$device is requesting to chat with you"),
-        actions: [
-          TextButton(
-            child: const Text("Reject"),
-            onPressed: () {
-              client.write("REJECTED");
-              client.close();
-              Navigator.of(context).pop();
-            },
-          ),
-          TextButton(
-            child: const Text("Accept"),
-            onPressed: () {
-              client.write("ACCEPTED");
-              String ip = client.remoteAddress.address.toString();
-              client.close();
-              Navigator.of(context).pop();
-              accCallback(
-                DiscoveredDevice(ip, device),
-              );
-            },
-          ),
-        ],
-      );
-    },
-  );
-}
-
-void startServerSocket(ServerSocket? serverSocket, String localIP, int port,
-    BuildContext context, Function accCallback) async {
-  serverSocket = await ServerSocket.bind(localIP, port);
+Future<bool> startServerSocket(ServerSocket? serverSocket, String localIP,
+    int port, BuildContext context, Function accCallback) async {
+  serverSocket = await ServerSocket.bind(localIP, port, shared: true);
   final deviceName = await getDeviceName();
 
   serverSocket.listen((Socket clientSocket) {
@@ -53,16 +17,20 @@ void startServerSocket(ServerSocket? serverSocket, String localIP, int port,
         clientSocket.close();
       }
       if (parts[0] == 'ASK_ACCEPT') {
-        getAcceptAns(
-            clientSocket, context, parts[1], serverSocket, accCallback);
+        accCallback(
+          clientSocket,
+          parts[1],
+        );
       }
       if (parts[0] == 'MESSAGE') {
         final message = parts[1];
-        final chatMessagesNotifier = providerContainer.read(chatMessagesProvider.notifier);
+        final chatMessagesNotifier =
+            providerContainer.read(chatMessagesProvider.notifier);
         chatMessagesNotifier.addMessage(message, false);
       }
     });
   });
+  return true;
 }
 
 void askMetadataRequest(String ipAddress, int port, Function setstate) {

@@ -3,7 +3,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localconnect/data.dart';
-import 'package:localconnect/providers.dart';
 import 'package:localconnect/socket.dart';
 
 class ChatScreen extends StatefulWidget {

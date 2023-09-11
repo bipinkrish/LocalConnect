@@ -1,11 +1,43 @@
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+///////////////////////////////////////////////////////////// Custom Classes
 
 class DiscoveredDevice {
   final String ip;
   final String deviceName;
 
   DiscoveredDevice(this.ip, this.deviceName);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is DiscoveredDevice &&
+        other.ip == ip &&
+        other.deviceName == deviceName;
+  }
+
+  @override
+  int get hashCode => ip.hashCode ^ deviceName.hashCode;
+}
+
+class DiscoveredNetwork {
+  final String addr;
+  final String name;
+
+  DiscoveredNetwork(this.addr, this.name);
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is DiscoveredNetwork &&
+        other.addr == addr &&
+        other.name == name;
+  }
+
+  @override
+  int get hashCode => addr.hashCode ^ name.hashCode;
 }
 
 class Message {
@@ -15,19 +47,16 @@ class Message {
   Message(this.text, this.you);
 }
 
-Future<String> getLocalIP() async {
+///////////////////////////////////////////////////////////// Others
+
+Future<List<DiscoveredNetwork>> getLocalIP() async {
   List<NetworkInterface> interfaces =
       await NetworkInterface.list(type: InternetAddressType.IPv4);
-  for (var interface in interfaces) {
-    if (interface.name == 'Wi-Fi') {
-      for (var address in interface.addresses) {
-        if (address.address.isNotEmpty) {
-          return address.address;
-        }
-      }
-    }
-  }
-  return interfaces[0].addresses[0].address;
+  Set<DiscoveredNetwork> discoverNet = {};
+  discoverNet.addAll(interfaces.map((interface) =>
+      DiscoveredNetwork(interface.addresses[0].address, interface.name)));
+
+  return discoverNet.toList();
 }
 
 Future<String> getDeviceName() async {
@@ -69,5 +98,26 @@ Future<String> getDeviceName() async {
     }
   } else {
     return "Device";
+  }
+}
+
+///////////////////////////////////////////////////////////// Providers
+
+final providerContainer = ProviderContainer();
+
+final chatMessagesProvider =
+    StateNotifierProvider<ChatMessagesNotifier, List<Message>>((ref) {
+  return ChatMessagesNotifier();
+});
+
+class ChatMessagesNotifier extends StateNotifier<List<Message>> {
+  ChatMessagesNotifier() : super([]);
+
+  void resetState() {
+    state = [];
+  }
+
+  void addMessage(String message, bool you) {
+    state = [...state, Message(message, you)];
   }
 }

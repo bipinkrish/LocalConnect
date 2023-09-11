@@ -1,10 +1,9 @@
-import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localconnect/chat.dart';
 import 'package:localconnect/data.dart';
-import 'package:localconnect/providers.dart';
+import 'package:localconnect/setting.dart';
 import 'package:localconnect/socket.dart';
 import 'package:network_discovery/network_discovery.dart';
 import 'package:window_size/window_size.dart';
@@ -21,7 +20,12 @@ void main() {
         title: "Local Connect",
         home: const HomePage(),
         themeMode: ThemeMode.dark,
-        darkTheme: ThemeData.dark(),
+        darkTheme: ThemeData.from(
+          colorScheme: const ColorScheme.dark(
+            primary: Colors.deepOrangeAccent,
+            onPrimary: Colors.white,
+          ),
+        ),
       ),
     ),
   );
@@ -37,20 +41,19 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   bool isAccepted = false;
   bool isRequesting = false;
-  late DiscoveredDevice peer;
-  String doa = "#FF6E40";
-  Timer? discoveryTimer;
 
-  List<DiscoveredDevice> discoveredDevices = [];
+  late DiscoveredDevice peer;
+  Set<DiscoveredDevice> discoveredDevices = {};
+  List<DiscoveredNetwork> discoveredNetwork = [];
+
   ServerSocket? serverSocket;
   int port = 4321;
-  String localIP = "0.0.0.0";
-  String localName = "Device";
+  String localIP = "";
+  String localName = "";
 
   @override
   void dispose() {
     serverSocket?.close();
-    discoveryTimer!.cancel();
     super.dispose();
   }
 
@@ -58,9 +61,13 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     getLocalIP().then(
       (value) {
-        localIP = value;
-        startServerSocket(serverSocket, localIP, port, context, acceptCallback);
-        startDeviceDiscovery();
+        discoveredNetwork = value;
+        if (discoveredNetwork.isNotEmpty) {
+          localIP = discoveredNetwork[0].addr;
+          startServerSocket(
+              serverSocket, localIP, port, context, getAcceptAns);
+          startDeviceDiscovery();
+        }
         setState(() {});
       },
     );
@@ -72,12 +79,14 @@ class _HomePageState extends State<HomePage> {
     super.initState();
   }
 
+  // new device's metadata received
   void setDisState(String ipAddress, String response) {
     setState(() {
       discoveredDevices.add(DiscoveredDevice(ipAddress, response));
     });
   }
 
+  // asked request response
   void setAccAns(String resp) {
     if (isRequesting) {
       setState(() {
@@ -88,18 +97,14 @@ class _HomePageState extends State<HomePage> {
       if (isAccepted) {
         acceptCallback(peer);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Center(child: Text("Rejected")),
-          ),
-        );
+        showSnack("${peer.deviceName} Rejected");
       }
     }
   }
 
+  // pushing new chat screen
   void acceptCallback(DiscoveredDevice accpeer) {
     serverSocket?.close();
-    discoveryTimer!.cancel();
     final notifier = providerContainer.read(chatMessagesProvider.notifier);
     notifier.resetState();
     Navigator.of(context).push(
@@ -114,44 +119,143 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void startDeviceDiscovery() async {
+  // show snackbar
+  void showSnack(String content) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        duration: const Duration(milliseconds: 800),
+        // showCloseIcon: true,
+        // closeIconColor: Colors.white,
+        backgroundColor: Colors.deepOrangeAccent,
+        content: Center(
+          child: Text(
+            content,
+            style: const TextStyle(color: Colors.white),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // discover devices on network
+  void startDeviceDiscovery({bool tapped = false}) async {
+    discoveredDevices = {};
     if (localIP.isNotEmpty) {
-      String temp = localIP.substring(0, localIP.lastIndexOf('.'));
-      discoveryTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
-        final stream = NetworkDiscovery.discover(temp, port);
-        stream.listen((NetworkAddress addr) {
-          if (!discoveredDevices.any((device) => device.ip == addr.ip) &&
-              addr.ip != localIP) {
-            askMetadataRequest(addr.ip, port, setDisState);
-          }
-        });
+      if (tapped) {
+        serverSocket?.close();
+        await startServerSocket(
+            serverSocket, localIP, port, context, getAcceptAns);
+      }
+      final stream = NetworkDiscovery.discover(
+          localIP.substring(0, localIP.lastIndexOf('.')), port);
+
+      stream.listen((NetworkAddress addr) {
+        if (addr.ip != localIP) {
+          askMetadataRequest(addr.ip, port, setDisState);
+        }
       });
+      if (tapped) {
+        showSnack("Re Discovered Devices");
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final deviceList = discoveredDevices.toList();
+
     return Scaffold(
+      appBar: AppBar(
+        title: const Text("Local Connect"),
+        actions: [
+          IconButton(
+            onPressed: () {
+              startDeviceDiscovery(tapped: true);
+            },
+            icon: const Icon(
+              Icons.refresh_outlined,
+              semanticLabel: "Re Discover",
+            ),
+          ),
+          IconButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) {
+                    return const Settings();
+                  },
+                ),
+              );
+            },
+            icon: const Icon(Icons.settings_outlined),
+          ),
+        ],
+      ),
       body: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
+          const SizedBox(
+            height: 10,
+          ),
+
+          // you box
           Visibility(
-            visible: localIP.isNotEmpty,
-            child: Padding(
-              padding: const EdgeInsets.only(top: 50, bottom: 10),
-              child: Text(
-                "$localName Serving on $localIP:$port",
-                style: const TextStyle(color: Colors.deepOrangeAccent),
-              ),
+            visible: (localName.isNotEmpty && localIP.isNotEmpty),
+            child: Column(
+              children: [
+                //first line
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(localName,
+                        style: const TextStyle(color: Colors.deepOrangeAccent)),
+                    const Text(" is available at "),
+                    Text(localIP,
+                        style: const TextStyle(color: Colors.deepOrangeAccent)),
+                  ],
+                ),
+
+                // second line
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      "with interface ",
+                    ),
+                    DropdownButton(
+                      style: const TextStyle(color: Colors.deepOrangeAccent),
+                      value: localIP,
+                      items: [
+                        for (DiscoveredNetwork network in discoveredNetwork)
+                          DropdownMenuItem(
+                              value: network.addr,
+                              child: Text(
+                                network.name,
+                                style: TextStyle(
+                                    color: localIP == network.addr
+                                        ? Colors.deepOrangeAccent
+                                        : Colors.white),
+                              ))
+                      ],
+                      onChanged: (value) {
+                        localIP = value!;
+                        startDeviceDiscovery(tapped: true);
+                        setState(() {});
+                      },
+                    ),
+                    Text(" on port $port"),
+                  ],
+                ),
+              ],
             ),
           ),
 
           // Display discovered devices
           Expanded(
             child: ListView.builder(
-              itemCount: discoveredDevices.length,
+              itemCount: deviceList.length,
               itemBuilder: (context, index) {
-                final device = discoveredDevices[index];
+                final device = deviceList[index];
                 return ListTile(
                   title: Text(device.deviceName),
                   subtitle: Text(device.ip),
@@ -170,6 +274,45 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // some one is asking
+  void getAcceptAns(
+    Socket client,
+    String device,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Chat Request"),
+          content: Text("$device is requesting to chat with you"),
+          actions: [
+            TextButton(
+              child: const Text("Reject"),
+              onPressed: () {
+                client.write("REJECTED");
+                client.close();
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text("Accept"),
+              onPressed: () {
+                client.write("ACCEPTED");
+                String ip = client.remoteAddress.address.toString();
+                client.close();
+                Navigator.of(context).pop();
+                acceptCallback(
+                  DiscoveredDevice(ip, device),
+                );
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // show chat request popup
   void showChatRequestPopup(
     DiscoveredDevice receiver,
   ) {
