@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.bipin" "\0"
-            VALUE "FileDescription", "localconnect" "\0"
+            VALUE "FileDescription", "LocalConnect" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "localconnect" "\0"
+            VALUE "InternalName", "LocalConnect" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2023 com.bipin. All rights reserved." "\0"
             VALUE "OriginalFilename", "localconnect.exe" "\0"
-            VALUE "ProductName", "localconnect" "\0"
+            VALUE "ProductName", "LocalConnect" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END
