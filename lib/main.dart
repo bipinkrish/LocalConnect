@@ -22,7 +22,7 @@ void main() {
         themeMode: ThemeMode.dark,
         darkTheme: ThemeData.from(
           colorScheme: const ColorScheme.dark(
-            primary: Colors.deepOrangeAccent,
+            primary: mainColor,
             onPrimary: Colors.white,
           ),
         ),
@@ -41,6 +41,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   bool isAccepted = false;
   bool isRequesting = false;
+  bool isAvailable = true;
 
   late DiscoveredDevice peer;
   Set<DiscoveredDevice> discoveredDevices = {};
@@ -59,24 +60,35 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void initState() {
+    initiateLocalIP();
+    initiateLocalName();
+    super.initState();
+  }
+
+  // initiate local ip
+  void initiateLocalIP() {
     getLocalIP().then(
       (value) {
         discoveredNetwork = value;
         if (discoveredNetwork.isNotEmpty) {
           localIP = discoveredNetwork[0].addr;
-          startServerSocket(
-              serverSocket, localIP, port, context, getAcceptAns);
+          startServerSocket(serverSocket, localIP, port, context, getAcceptAns);
           startDeviceDiscovery();
         }
         setState(() {});
       },
     );
+  }
+
+  // inititale local device name
+  void initiateLocalName() {
     getDeviceName().then((value) {
-      setState(() {
+      if (localName != value) {
+        setState(() {
         localName = value;
       });
+      }
     });
-    super.initState();
   }
 
   // new device's metadata received
@@ -96,7 +108,10 @@ class _HomePageState extends State<HomePage> {
       Navigator.of(context).pop();
       if (isAccepted) {
         acceptCallback(peer);
+      } else if (resp == "BUSY") {
+        showSnack("${peer.deviceName} is Busy");
       } else {
+        // REJECTED
         showSnack("${peer.deviceName} Rejected");
       }
     }
@@ -105,6 +120,7 @@ class _HomePageState extends State<HomePage> {
   // pushing new chat screen
   void acceptCallback(DiscoveredDevice accpeer) {
     serverSocket?.close();
+    isAvailable = false;
     final notifier = providerContainer.read(chatMessagesProvider.notifier);
     notifier.resetState();
     Navigator.of(context).push(
@@ -121,30 +137,19 @@ class _HomePageState extends State<HomePage> {
 
   // show snackbar
   void showSnack(String content) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        duration: const Duration(milliseconds: 800),
-        // showCloseIcon: true,
-        // closeIconColor: Colors.white,
-        backgroundColor: Colors.deepOrangeAccent,
-        content: Center(
-          child: Text(
-            content,
-            style: const TextStyle(color: Colors.white),
-          ),
-        ),
-      ),
-    );
+    ScaffoldMessenger.of(context).showSnackBar(snackbar(content));
   }
 
   // discover devices on network
   void startDeviceDiscovery({bool tapped = false}) async {
     discoveredDevices = {};
+    isAvailable = true;
     if (localIP.isNotEmpty) {
       if (tapped) {
         serverSocket?.close();
         await startServerSocket(
             serverSocket, localIP, port, context, getAcceptAns);
+        initiateLocalName();
       }
       final stream = NetworkDiscovery.discover(
           localIP.substring(0, localIP.lastIndexOf('.')), port);
@@ -182,7 +187,9 @@ class _HomePageState extends State<HomePage> {
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) {
-                    return const Settings();
+                    return Settings(
+                      initialDeviceName: localName,
+                    );
                   },
                 ),
               );
@@ -207,11 +214,9 @@ class _HomePageState extends State<HomePage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(localName,
-                        style: const TextStyle(color: Colors.deepOrangeAccent)),
+                    Text(localName, style: const TextStyle(color: mainColor)),
                     const Text(" is available at "),
-                    Text(localIP,
-                        style: const TextStyle(color: Colors.deepOrangeAccent)),
+                    Text(localIP, style: const TextStyle(color: mainColor)),
                   ],
                 ),
 
@@ -223,7 +228,7 @@ class _HomePageState extends State<HomePage> {
                       "with interface ",
                     ),
                     DropdownButton(
-                      style: const TextStyle(color: Colors.deepOrangeAccent),
+                      style: const TextStyle(color: mainColor),
                       value: localIP,
                       items: [
                         for (DiscoveredNetwork network in discoveredNetwork)
@@ -233,7 +238,7 @@ class _HomePageState extends State<HomePage> {
                                 network.name,
                                 style: TextStyle(
                                     color: localIP == network.addr
-                                        ? Colors.deepOrangeAccent
+                                        ? mainColor
                                         : Colors.white),
                               ))
                       ],
@@ -248,6 +253,12 @@ class _HomePageState extends State<HomePage> {
                 ),
               ],
             ),
+          ),
+
+          const Divider(
+            height: 5,
+            thickness: 1,
+            color: mainColor,
           ),
 
           // Display discovered devices
@@ -279,6 +290,11 @@ class _HomePageState extends State<HomePage> {
     Socket client,
     String device,
   ) {
+    if (!isAvailable) {
+      client.write("BUSY");
+      client.close();
+      return;
+    }
     showDialog(
       context: context,
       builder: (context) {

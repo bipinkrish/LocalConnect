@@ -19,6 +19,7 @@ dependencies:
   network_discovery: ^1.0.0
   device_info_plus: ^9.0.3
   flutter_riverpod: ^2.4.0
+  shared_preferences: ^2.2.1
 
   window_size:
     git:
@@ -67,7 +68,7 @@ flutter_launcher_icons:
   min_sdk_android: 21
   remove_alpha_ios: true
   adaptive_icon_foreground: "assets/logo-mob.png"
-  adaptive_icon_background: "#FF6E40"
+  adaptive_icon_background: "#FF5722"
   windows:
     generate: true
     image_path: "assets/logo.png"

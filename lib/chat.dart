@@ -54,6 +54,7 @@ class _ChatScreenState extends State<ChatScreen> {
               children: <Widget>[
                 Expanded(
                   child: TextField(
+                    autofocus: true,
                     controller: _messageController,
                     decoration: InputDecoration(
                       hintText: 'Enter your message...',

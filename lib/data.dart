@@ -1,6 +1,12 @@
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+////////////////////////////////////////////////////////////// Constants
+
+const Color mainColor = Colors.deepOrange;
 
 ///////////////////////////////////////////////////////////// Custom Classes
 
@@ -60,6 +66,10 @@ Future<List<DiscoveredNetwork>> getLocalIP() async {
 }
 
 Future<String> getDeviceName() async {
+  if (await isStored(deviceNameKey)) {
+    return await get(deviceNameKey);
+  }
+
   DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
   if (Platform.isAndroid) {
     try {
@@ -120,4 +130,38 @@ class ChatMessagesNotifier extends StateNotifier<List<Message>> {
   void addMessage(String message, bool you) {
     state = [...state, Message(message, you)];
   }
+}
+
+//////////////////////////////////////////////////// Common
+
+SnackBar snackbar(String content) {
+  return SnackBar(
+    duration: const Duration(milliseconds: 800),
+    backgroundColor: mainColor,
+    content: Center(
+      child: Text(
+        content,
+        style: const TextStyle(color: Colors.white),
+      ),
+    ),
+  );
+}
+
+/////////////////////////////////////////////////// Shared Prefrences
+
+String deviceNameKey = "DeviceName";
+
+void save(String key, String value) async {
+  final SharedPreferences prefs = await SharedPreferences.getInstance();
+  await prefs.setString(key, value);
+}
+
+Future<bool> isStored(String key) async {
+  final SharedPreferences prefs = await SharedPreferences.getInstance();
+  return prefs.containsKey(key);
+}
+
+Future<String> get(String key) async {
+  final SharedPreferences prefs = await SharedPreferences.getInstance();
+  return prefs.getString(key) ?? "Null";
 }
