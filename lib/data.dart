@@ -48,9 +48,10 @@ class DiscoveredNetwork {
 
 class Message {
   final String text;
-  final bool you;
+  final bool isYou;
+  final bool isInfo;
 
-  Message(this.text, this.you);
+  Message(this.text, this.isYou, {this.isInfo = false});
 }
 
 ///////////////////////////////////////////////////////////// Others
