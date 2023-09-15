@@ -128,8 +128,8 @@ class ChatMessagesNotifier extends StateNotifier<List<Message>> {
     state = [];
   }
 
-  void addMessage(String message, bool you) {
-    state = [...state, Message(message, you)];
+  void addMessage(String message, bool you, {bool info = false}) {
+    state = [...state, Message(message, you, isInfo: info)];
   }
 }
 

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
@@ -15,7 +16,7 @@ Future<bool> startServerSocket(
 
   serverSocket.listen((Socket clientSocket) {
     clientSocket.listen((Uint8List data) async {
-      final parts = String.fromCharCodes(data).split("|");
+      final parts = utf8.decode(data).split("|");
 
       if (parts[0] == 'GET_METADATA') {
         final deviceName = await getDeviceName();
@@ -40,7 +41,7 @@ Future<bool> startServerSocket(
         final message = parts[1];
         final chatMessagesNotifier =
             providerContainer.read(chatMessagesProvider.notifier);
-        chatMessagesNotifier.addMessage(message, false);
+        chatMessagesNotifier.addMessage(message, false, info: parts[2] == "1");
       }
     });
   });
@@ -51,7 +52,7 @@ Future<bool> startServerSocket(
 void askMetadataRequest(String ipAddress, int port, Function setstate) {
   Socket.connect(ipAddress, port).then((clientSocket) {
     const metadataRequest = 'GET_METADATA';
-    clientSocket.add(Uint8List.fromList(metadataRequest.codeUnits));
+    clientSocket.add(Uint8List.fromList(utf8.encode(metadataRequest)));
 
     clientSocket.listen((Uint8List data) {
       final response = String.fromCharCodes(data);
@@ -67,7 +68,7 @@ void askMetadataRequest(String ipAddress, int port, Function setstate) {
 void askAccept(String rec, int port, String device, Function setAccAns) {
   Socket.connect(rec, port).then((clientSocket) {
     String askRequest = 'ASK_ACCEPT|$device';
-    clientSocket.add(Uint8List.fromList(askRequest.codeUnits));
+    clientSocket.add(Uint8List.fromList(utf8.encode(askRequest)));
 
     clientSocket.listen((Uint8List data) {
       final response = String.fromCharCodes(data);
@@ -82,8 +83,8 @@ void askAccept(String rec, int port, String device, Function setAccAns) {
 // canceling request
 void sendCancel(String ip, int port) {
   Socket.connect(ip, port).then((clientSocket) {
-    String askRequest = 'CANCEL';
-    clientSocket.add(Uint8List.fromList(askRequest.codeUnits));
+    String canRequest = 'CANCEL';
+    clientSocket.add(Uint8List.fromList(utf8.encode(canRequest)));
     clientSocket.close();
   }).catchError((error) {
     debugPrint('Connection error: $error');
@@ -91,10 +92,10 @@ void sendCancel(String ip, int port) {
 }
 
 // sending msg
-void sendMessage(String party, int port, String msg) {
+void sendMessage(String party, int port, String msg, String info) {
   Socket.connect(party, port).then((clientSocket) {
-    String askRequest = 'MESSAGE|$msg';
-    clientSocket.add(Uint8List.fromList(askRequest.codeUnits));
+    String msgRequest = 'MESSAGE|$msg|$info';
+    clientSocket.add(Uint8List.fromList(utf8.encode(msgRequest)));
     clientSocket.close();
   }).catchError((error) {
     debugPrint('Connection error: $error');

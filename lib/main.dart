@@ -77,7 +77,6 @@ class _HomePageState extends State<HomePage> {
               serverSocket, localIP, port, context, getAcceptAns, cancelPopup);
           startDeviceDiscovery();
         }
-        setState(() {});
       },
     );
   }
@@ -85,7 +84,7 @@ class _HomePageState extends State<HomePage> {
   // inititale local device name
   void initiateLocalName() {
     getDeviceName().then((value) {
-      if (localName != value) {
+      if (mounted && localName != value) {
         setState(() {
           localName = value;
         });
@@ -95,26 +94,30 @@ class _HomePageState extends State<HomePage> {
 
   // new device's metadata received
   void setDisState(String ipAddress, String response) {
-    setState(() {
+    if (mounted) {
+      setState(() {
       discoveredDevices.add(DiscoveredDevice(ipAddress, response));
     });
+    }
   }
 
   // asked request response
   void setAccAns(String resp) {
     if (isRequesting) {
-      setState(() {
-        isAccepted = (resp == "ACCEPTED");
-        isRequesting = false;
-      });
+      isAccepted = (resp == "ACCEPTED");
+      isRequesting = false;
+
       Navigator.of(context).pop();
       if (isAccepted) {
         acceptCallback(peer);
-      } else if (resp == "BUSY") {
-        showSnack("${peer.deviceName} is Busy");
       } else {
-        // REJECTED
-        showSnack("${peer.deviceName} Rejected");
+        isAvailable = true;
+        if (resp == "BUSY") {
+          showSnack("${peer.deviceName} is Busy");
+        } else {
+          // REJECTED
+          showSnack("${peer.deviceName} Rejected");
+        }
       }
     }
   }
@@ -124,9 +127,8 @@ class _HomePageState extends State<HomePage> {
     if (ip == asking.ip) {
       Navigator.of(context).pop();
       showSnack("${asking.deviceName} Canceled Request");
-      setState(() {
-        isAvailable = true;
-      });
+
+      isAvailable = true;
     }
   }
 
@@ -140,6 +142,7 @@ class _HomePageState extends State<HomePage> {
       MaterialPageRoute(
         builder: (context) {
           return ChatScreen(
+            me: DiscoveredDevice(localIP, localName),
             peer: accpeer,
             port: port,
           );
@@ -264,7 +267,9 @@ class _HomePageState extends State<HomePage> {
                       onChanged: (value) {
                         localIP = value!;
                         startDeviceDiscovery(tapped: true);
-                        setState(() {});
+                        if (mounted) {
+                          setState(() {});
+                        }
                       },
                     ),
                     Text(" on port $port"),
@@ -314,11 +319,10 @@ class _HomePageState extends State<HomePage> {
       client.close();
       return;
     }
-    setState(() {
-      isAvailable = false;
-      asking =
-          DiscoveredDevice(client.remoteAddress.address.toString(), device);
-    });
+
+    isAvailable = false;
+    asking = DiscoveredDevice(client.remoteAddress.address.toString(), device);
+
     showModalBottomSheet(
       isDismissible: false,
       context: context,
@@ -343,9 +347,8 @@ class _HomePageState extends State<HomePage> {
                         client.write("REJECTED");
                         client.close();
                         Navigator.of(context).pop();
-                        setState(() {
-                          isAvailable = true;
-                        });
+
+                        isAvailable = true;
                       },
                     ),
                     ElevatedButton(
@@ -370,9 +373,8 @@ class _HomePageState extends State<HomePage> {
   void showChatRequestPopup(
     DiscoveredDevice receiver,
   ) {
-    setState(() {
-      isAvailable = false;
-    });
+    isAvailable = false;
+
     showModalBottomSheet(
       isDismissible: false,
       context: context,
@@ -396,21 +398,19 @@ class _HomePageState extends State<HomePage> {
                         ElevatedButton(
                           child: const Text("Cancel"),
                           onPressed: () {
-                            setState(() {
-                              isRequesting = false;
-                              isAvailable = true;
-                            });
+                            isRequesting = false;
+                            isAvailable = true;
+
                             Navigator.of(context).pop();
                           },
                         ),
                         ElevatedButton(
                           child: const Text("Ask"),
                           onPressed: () {
-                            setState(() {
-                              isRequesting = true;
-                              isAvailable = false;
-                              peer = receiver;
-                            });
+                            isRequesting = true;
+                            isAvailable = false;
+                            peer = receiver;
+
                             Navigator.of(context).pop();
                             showChatRequestPopup(receiver);
                             askAccept(receiver.ip, port, localName, setAccAns);
@@ -431,10 +431,10 @@ class _HomePageState extends State<HomePage> {
                           child: const Text("Cancel"),
                           onPressed: () {
                             sendCancel(receiver.ip, port);
-                            setState(() {
-                              isRequesting = false;
-                              isAvailable = true;
-                            });
+
+                            isRequesting = false;
+                            isAvailable = true;
+
                             Navigator.of(context).pop();
                           },
                         ),

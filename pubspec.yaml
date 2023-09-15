@@ -20,6 +20,7 @@ dependencies:
   device_info_plus: ^9.0.3
   flutter_riverpod: ^2.4.0
   shared_preferences: ^2.2.1
+  flutter_markdown: ^0.6.17+3
 
   window_size:
     git:

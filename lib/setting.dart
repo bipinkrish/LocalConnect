@@ -31,11 +31,13 @@ class _SettingsState extends State<Settings> {
     _deviceNameController =
         TextEditingController(text: widget.initialDeviceName);
     _deviceNameController.addListener(() {
-      setState(() {
-        _deviceNameValid = _deviceNameController.text.isNotEmpty &&
-            _deviceNameNode.hasFocus &&
-            (widget.initialDeviceName != _deviceNameController.text);
-      });
+      if (mounted) {
+        setState(() {
+          _deviceNameValid = _deviceNameController.text.isNotEmpty &&
+              _deviceNameNode.hasFocus &&
+              (widget.initialDeviceName != _deviceNameController.text);
+        });
+      }
     });
   }
 
@@ -103,9 +105,11 @@ class _SettingsState extends State<Settings> {
                 if (_deviceNameValid) {
                   save(deviceNameKey, _deviceNameController.text);
                   widget.initialDeviceName = _deviceNameController.text;
-                  setState(() {
-                    _deviceNameValid = false;
-                  });
+                  if (mounted) {
+                    setState(() {
+                      _deviceNameValid = false;
+                    });
+                  }
                   showSnack("Device Name Updated");
                 } else if (widget.initialDeviceName !=
                     _deviceNameController.text) {

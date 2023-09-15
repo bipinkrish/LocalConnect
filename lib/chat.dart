@@ -1,17 +1,19 @@
-// ignore_for_file: must_be_immutable
+// ignore_for_file: must_be_immutable, unused_import, depend_on_referenced_packages
 
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localconnect/data.dart';
 import 'package:localconnect/socket.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
+  final DiscoveredDevice me;
   final DiscoveredDevice peer;
   final int port;
 
-  const ChatScreen({Key? key, required this.peer, required this.port})
+  const ChatScreen(
+      {Key? key, required this.me, required this.peer, required this.port})
       : super(key: key);
 
   @override
@@ -36,9 +38,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     providerContainer.listen(
       chatMessagesProvider,
       (previous, next) {
-        setState(() {
-          messages = providerContainer.read(chatMessagesProvider);
-        });
+        final updatedMessages = providerContainer.read(chatMessagesProvider);
+        final filteredMessages = updatedMessages.where((message) {
+          return !(message.isYou && message.isInfo);
+        }).toList();
+        if (mounted) {
+          setState(() {
+            messages = filteredMessages;
+          });
+        }
         _scrollToBottom();
       },
     );
@@ -47,6 +55,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   void initState() {
     listener();
+    Future(
+      () {
+        _sendMessage("_${widget.me.deviceName} connected_", info: true);
+      },
+    );
+
     super.initState();
   }
 
@@ -56,7 +70,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _scrollController.dispose();
     _messageNode.unfocus();
     _messageNode.dispose();
-
     super.dispose();
   }
 
@@ -68,24 +81,22 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     return Platform.isAndroid || Platform.isIOS;
   }
 
-  void _sendMessage(String message) {
+  void _sendMessage(String message, {bool info = false}) {
     if (message.isNotEmpty) {
-      sendMessage(widget.peer.ip, widget.port, message);
+      sendMessage(widget.peer.ip, widget.port, message, info ? "1" : "0");
       final notifier = providerContainer.read(chatMessagesProvider.notifier);
-      notifier.addMessage(message, true);
+      notifier.addMessage(message, true, info: info);
       _messageController.clear();
     } else {
       _messageNode.unfocus();
     }
   }
 
-  void showExiting() {}
-
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        showExiting();
+        _sendMessage("_${widget.me.deviceName} disconnected_", info: true);
         return true;
       },
       child: Scaffold(
@@ -106,6 +117,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       autofocus: !isMobile(),
                       focusNode: _messageNode,
                       controller: _messageController,
+                      maxLines: null,
                       decoration: InputDecoration(
                         hintText: 'Enter your message...',
                         filled: true,
@@ -113,7 +125,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 12),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30),
+                          borderRadius: BorderRadius.circular(15),
                           borderSide: BorderSide.none,
                         ),
                       ),
@@ -149,21 +161,30 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         itemCount: messages.length,
         itemBuilder: (context, index) {
           final message = messages[index];
-          final isYou = message.isYou;
 
           return Align(
-            alignment: isYou ? Alignment.centerRight : Alignment.centerLeft,
+            alignment: message.isInfo
+                ? Alignment.center
+                : message.isYou
+                    ? Alignment.centerRight
+                    : Alignment.centerLeft,
             child: Container(
-              margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-              padding: const EdgeInsets.all(12),
+              margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 20),
+              padding: message.isInfo
+                  ? const EdgeInsets.all(6)
+                  : const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: isYou ? Colors.blue : Colors.green,
+                color: message.isInfo
+                    ? Colors.grey
+                    : message.isYou
+                        ? Colors.blue
+                        : Colors.green,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Text(
-                message.text,
-                style: const TextStyle(
-                  color: Colors.white,
+              child: SizedBox(
+                child: MarkdownBody(
+                  data: message.text,
+                  selectable: true,
                 ),
               ),
             ),
