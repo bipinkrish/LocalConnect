@@ -3,25 +3,39 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:localconnect/data.dart';
 
-Future<bool> startServerSocket(ServerSocket? serverSocket, String localIP,
-    int port, BuildContext context, Function accCallback) async {
+// server
+Future<bool> startServerSocket(
+    ServerSocket? serverSocket,
+    String localIP,
+    int port,
+    BuildContext context,
+    Function accCallback,
+    Function cancelCallback) async {
   serverSocket = await ServerSocket.bind(localIP, port, shared: true);
-  final deviceName = await getDeviceName();
 
   serverSocket.listen((Socket clientSocket) {
     clientSocket.listen((Uint8List data) async {
       final parts = String.fromCharCodes(data).split("|");
 
       if (parts[0] == 'GET_METADATA') {
+        final deviceName = await getDeviceName();
         clientSocket.write(deviceName);
         clientSocket.close();
       }
+
       if (parts[0] == 'ASK_ACCEPT') {
         accCallback(
           clientSocket,
           parts[1],
         );
       }
+
+      if (parts[0] == 'CANCEL') {
+        cancelCallback(
+          clientSocket.remoteAddress.address.toString(),
+        );
+      }
+
       if (parts[0] == 'MESSAGE') {
         final message = parts[1];
         final chatMessagesNotifier =
@@ -33,6 +47,7 @@ Future<bool> startServerSocket(ServerSocket? serverSocket, String localIP,
   return true;
 }
 
+// asking meta data
 void askMetadataRequest(String ipAddress, int port, Function setstate) {
   Socket.connect(ipAddress, port).then((clientSocket) {
     const metadataRequest = 'GET_METADATA';
@@ -48,6 +63,7 @@ void askMetadataRequest(String ipAddress, int port, Function setstate) {
   });
 }
 
+// ask accept
 void askAccept(String rec, int port, String device, Function setAccAns) {
   Socket.connect(rec, port).then((clientSocket) {
     String askRequest = 'ASK_ACCEPT|$device';
@@ -63,10 +79,23 @@ void askAccept(String rec, int port, String device, Function setAccAns) {
   });
 }
 
+// canceling request
+void sendCancel(String ip, int port) {
+  Socket.connect(ip, port).then((clientSocket) {
+    String askRequest = 'CANCEL';
+    clientSocket.add(Uint8List.fromList(askRequest.codeUnits));
+    clientSocket.close();
+  }).catchError((error) {
+    debugPrint('Connection error: $error');
+  });
+}
+
+// sending msg
 void sendMessage(String party, int port, String msg) {
   Socket.connect(party, port).then((clientSocket) {
     String askRequest = 'MESSAGE|$msg';
     clientSocket.add(Uint8List.fromList(askRequest.codeUnits));
+    clientSocket.close();
   }).catchError((error) {
     debugPrint('Connection error: $error');
   });

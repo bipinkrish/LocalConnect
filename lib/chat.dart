@@ -79,10 +79,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
   }
 
+  void showExiting() {}
+
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
+        showExiting();
         return true;
       },
       child: Scaffold(
@@ -100,25 +103,26 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 children: <Widget>[
                   Expanded(
                     child: TextField(
-                        autofocus: !isMobile(),
-                        focusNode: _messageNode,
-                        controller: _messageController,
-                        decoration: InputDecoration(
-                          hintText: 'Enter your message...',
-                          filled: true,
-                          fillColor: Colors.black26,
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 12),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(30),
-                            borderSide: BorderSide.none,
-                          ),
+                      autofocus: !isMobile(),
+                      focusNode: _messageNode,
+                      controller: _messageController,
+                      decoration: InputDecoration(
+                        hintText: 'Enter your message...',
+                        filled: true,
+                        fillColor: Colors.black26,
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(30),
+                          borderSide: BorderSide.none,
                         ),
-                        onSubmitted: (message) {
-                          _sendMessage(message);
-                          _messageNode.requestFocus();
-                        },
-                        onTapOutside: (event) => _messageNode.unfocus()),
+                      ),
+                      onSubmitted: (message) {
+                        _sendMessage(message);
+                        _messageNode.requestFocus();
+                      },
+                      // onTapOutside: (event) => _messageNode.unfocus(),
+                    ),
                   ),
                   IconButton(
                     icon: const Icon(
@@ -126,8 +130,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       color: mainColor,
                     ),
                     onPressed: () {
-                      final message = _messageController.text;
-                      _sendMessage(message);
+                      _sendMessage(_messageController.text);
                     },
                   ),
                 ],

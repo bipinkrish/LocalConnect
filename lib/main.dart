@@ -44,6 +44,7 @@ class _HomePageState extends State<HomePage> {
   bool isAvailable = true;
 
   late DiscoveredDevice peer;
+  DiscoveredDevice asking = DiscoveredDevice("", "");
   Set<DiscoveredDevice> discoveredDevices = {};
   List<DiscoveredNetwork> discoveredNetwork = [];
 
@@ -72,7 +73,8 @@ class _HomePageState extends State<HomePage> {
         discoveredNetwork = value;
         if (discoveredNetwork.isNotEmpty) {
           localIP = discoveredNetwork[0].addr;
-          startServerSocket(serverSocket, localIP, port, context, getAcceptAns);
+          startServerSocket(
+              serverSocket, localIP, port, context, getAcceptAns, cancelPopup);
           startDeviceDiscovery();
         }
         setState(() {});
@@ -85,8 +87,8 @@ class _HomePageState extends State<HomePage> {
     getDeviceName().then((value) {
       if (localName != value) {
         setState(() {
-        localName = value;
-      });
+          localName = value;
+        });
       }
     });
   }
@@ -117,13 +119,24 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  // req canceled
+  void cancelPopup(String ip) {
+    if (ip == asking.ip) {
+      Navigator.of(context).pop();
+      showSnack("${asking.deviceName} Canceled Request");
+      setState(() {
+        isAvailable = true;
+      });
+    }
+  }
+
   // pushing new chat screen
-  void acceptCallback(DiscoveredDevice accpeer) {
+  void acceptCallback(DiscoveredDevice accpeer) async {
     serverSocket?.close();
     isAvailable = false;
     final notifier = providerContainer.read(chatMessagesProvider.notifier);
     notifier.resetState();
-    Navigator.of(context).push(
+    await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) {
           return ChatScreen(
@@ -133,6 +146,8 @@ class _HomePageState extends State<HomePage> {
         },
       ),
     );
+    if (!mounted) return;
+    startDeviceDiscovery();
   }
 
   // show snackbar
@@ -148,9 +163,11 @@ class _HomePageState extends State<HomePage> {
       if (tapped) {
         serverSocket?.close();
         await startServerSocket(
-            serverSocket, localIP, port, context, getAcceptAns);
+            serverSocket, localIP, port, context, getAcceptAns, cancelPopup);
         initiateLocalName();
       }
+      // int lastIndex = localIP.lastIndexOf('.');
+      // int secondLastIndex = localIP.lastIndexOf('.', lastIndex - 1);
       final stream = NetworkDiscovery.discover(
           localIP.substring(0, localIP.lastIndexOf('.')), port);
 
@@ -160,7 +177,7 @@ class _HomePageState extends State<HomePage> {
         }
       });
       if (tapped) {
-        showSnack("Re Discovered Devices");
+        showSnack("Re-Freshed Configarations");
       }
     }
   }
@@ -183,8 +200,8 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           IconButton(
-            onPressed: () {
-              Navigator.of(context).push(
+            onPressed: () async {
+              await Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) {
                     return Settings(
@@ -193,6 +210,8 @@ class _HomePageState extends State<HomePage> {
                   },
                 ),
               );
+              if (!mounted) return;
+              initiateLocalName();
             },
             icon: const Icon(Icons.settings_outlined),
           ),
@@ -295,34 +314,53 @@ class _HomePageState extends State<HomePage> {
       client.close();
       return;
     }
-    showDialog(
+    setState(() {
+      isAvailable = false;
+      asking =
+          DiscoveredDevice(client.remoteAddress.address.toString(), device);
+    });
+    showModalBottomSheet(
+      isDismissible: false,
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: const Text("Chat Request"),
-          content: Text("$device is requesting to chat with you"),
-          actions: [
-            TextButton(
-              child: const Text("Reject"),
-              onPressed: () {
-                client.write("REJECTED");
-                client.close();
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: const Text("Accept"),
-              onPressed: () {
-                client.write("ACCEPTED");
-                String ip = client.remoteAddress.address.toString();
-                client.close();
-                Navigator.of(context).pop();
-                acceptCallback(
-                  DiscoveredDevice(ip, device),
-                );
-              },
-            ),
-          ],
+        return Container(
+          padding: const EdgeInsets.all(10),
+          height: 150,
+          child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text("$device is requesting to chat with you"),
+                const SizedBox(
+                  height: 20,
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    ElevatedButton(
+                      child: const Text("Reject"),
+                      onPressed: () {
+                        client.write("REJECTED");
+                        client.close();
+                        Navigator.of(context).pop();
+                        setState(() {
+                          isAvailable = true;
+                        });
+                      },
+                    ),
+                    ElevatedButton(
+                      child: const Text("Accept"),
+                      onPressed: () {
+                        client.write("ACCEPTED");
+                        client.close();
+
+                        Navigator.of(context).pop();
+                        acceptCallback(asking);
+                      },
+                    ),
+                  ],
+                )
+              ]),
         );
       },
     );
@@ -332,58 +370,86 @@ class _HomePageState extends State<HomePage> {
   void showChatRequestPopup(
     DiscoveredDevice receiver,
   ) {
-    showDialog(
-        barrierDismissible: false,
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: const Text("Chat Request"),
-            content: !isRequesting
-                ? Text(
-                    "Do you want to start a chat with ${receiver.deviceName}?")
-                : Text("Waiting for ${receiver.deviceName} to accept"),
-            actions: !isRequesting
+    setState(() {
+      isAvailable = false;
+    });
+    showModalBottomSheet(
+      isDismissible: false,
+      context: context,
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(10),
+          height: 150,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: !isRequesting
                 ? [
-                    TextButton(
-                      child: const Text("Cancel"),
-                      onPressed: () {
-                        setState(() {
-                          isRequesting = false;
-                        });
-                        Navigator.of(context).pop();
-                      },
+                    Text(
+                        "Do you want to start a chat with ${receiver.deviceName}?"),
+                    const SizedBox(
+                      height: 20,
                     ),
-                    TextButton(
-                      child: const Text("Ask"),
-                      onPressed: () {
-                        setState(() {
-                          isRequesting = true;
-                          peer = receiver;
-                        });
-                        Navigator.of(context).pop();
-                        showChatRequestPopup(receiver);
-                        askAccept(receiver.ip, port, localName, setAccAns);
-                      },
-                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        ElevatedButton(
+                          child: const Text("Cancel"),
+                          onPressed: () {
+                            setState(() {
+                              isRequesting = false;
+                              isAvailable = true;
+                            });
+                            Navigator.of(context).pop();
+                          },
+                        ),
+                        ElevatedButton(
+                          child: const Text("Ask"),
+                          onPressed: () {
+                            setState(() {
+                              isRequesting = true;
+                              isAvailable = false;
+                              peer = receiver;
+                            });
+                            Navigator.of(context).pop();
+                            showChatRequestPopup(receiver);
+                            askAccept(receiver.ip, port, localName, setAccAns);
+                          },
+                        ),
+                      ],
+                    )
                   ]
                 : [
-                    const Center(
-                      child: Padding(
-                        padding: EdgeInsets.only(bottom: 12),
-                        child: CircularProgressIndicator(),
-                      ),
+                    Text("Waiting for ${receiver.deviceName} to accept"),
+                    const SizedBox(
+                      height: 20,
                     ),
-                    TextButton(
-                      child: const Text("Cancel"),
-                      onPressed: () {
-                        setState(() {
-                          isRequesting = false;
-                        });
-                        Navigator.of(context).pop();
-                      },
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        ElevatedButton(
+                          child: const Text("Cancel"),
+                          onPressed: () {
+                            sendCancel(receiver.ip, port);
+                            setState(() {
+                              isRequesting = false;
+                              isAvailable = true;
+                            });
+                            Navigator.of(context).pop();
+                          },
+                        ),
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(12),
+                            child: CircularProgressIndicator(),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
-          );
-        });
+          ),
+        );
+      },
+    );
   }
 }
