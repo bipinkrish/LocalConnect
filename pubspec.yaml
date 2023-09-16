@@ -21,6 +21,7 @@ dependencies:
   flutter_riverpod: ^2.4.0
   shared_preferences: ^2.2.1
   flutter_markdown: ^0.6.17+3
+  flutter_colorpicker: ^1.0.3
 
   window_size:
     git:

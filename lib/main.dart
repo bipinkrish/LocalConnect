@@ -77,6 +77,9 @@ class _HomePageState extends State<HomePage> {
               serverSocket, localIP, port, context, getAcceptAns, cancelPopup);
           startDeviceDiscovery();
         }
+        if (mounted) {
+          setState(() {});
+        }
       },
     );
   }
@@ -96,8 +99,8 @@ class _HomePageState extends State<HomePage> {
   void setDisState(String ipAddress, String response) {
     if (mounted) {
       setState(() {
-      discoveredDevices.add(DiscoveredDevice(ipAddress, response));
-    });
+        discoveredDevices.add(DiscoveredDevice(ipAddress, response));
+      });
     }
   }
 

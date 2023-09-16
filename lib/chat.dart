@@ -25,6 +25,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _messageController = TextEditingController();
   final FocusNode _messageNode = FocusNode();
+  Color meColor = Colors.blue;
+  Color youColor = Colors.green;
+  bool markdown = true;
 
   void _scrollToBottom() {
     _scrollController.animateTo(
@@ -52,12 +55,35 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
   }
 
+  void initializeColors() async {
+    List<String> temp = (await load(meColorKey, defaultMeColor)).split(",");
+    List<int> intList = temp.map((str) => int.tryParse(str) ?? 0).toList();
+    meColor = Color.fromARGB(intList[0], intList[1], intList[2], intList[3]);
+
+    temp = (await load(youColorKey, defaultYouColor)).split(",");
+    intList = temp.map((str) => int.tryParse(str) ?? 0).toList();
+    youColor = Color.fromARGB(intList[0], intList[1], intList[2], intList[3]);
+
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  void initializeMarkdown() async {
+    markdown = (await loadBool(markdownKey, defaultMarkdown));
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
   @override
   void initState() {
     listener();
+    initializeColors();
+    initializeMarkdown();
     Future(
       () {
-        _sendMessage("_${widget.me.deviceName} connected_", info: true);
+        _sendMessage("${widget.me.deviceName} connected", info: true);
       },
     );
 
@@ -96,7 +122,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        _sendMessage("_${widget.me.deviceName} disconnected_", info: true);
+        _sendMessage("${widget.me.deviceName} disconnected", info: true);
         return true;
       },
       child: Scaffold(
@@ -177,16 +203,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 color: message.isInfo
                     ? Colors.grey
                     : message.isYou
-                        ? Colors.blue
-                        : Colors.green,
+                        ? meColor
+                        : youColor,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: SizedBox(
-                child: MarkdownBody(
-                  data: message.text,
-                  selectable: true,
-                ),
-              ),
+              child: markdown
+                  ? SizedBox(
+                      child: MarkdownBody(
+                        data: message.text,
+                        selectable: true,
+                      ),
+                    )
+                  : Text(message.text),
             ),
           );
         },

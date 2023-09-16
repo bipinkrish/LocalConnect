@@ -150,11 +150,24 @@ SnackBar snackbar(String content) {
 
 /////////////////////////////////////////////////// Shared Prefrences
 
-String deviceNameKey = "DeviceName";
+const String deviceNameKey = "DeviceName";
+const String youColorKey = 'YouColor';
+const String meColorKey = 'MeColor';
+const String markdownKey = 'MarkDown';
+
+// Default custom colors
+final String defaultMeColor = Colors.blue.hashCode.toString();
+final String defaultYouColor = Colors.green.hashCode.toString();
+const bool defaultMarkdown = true;
 
 void save(String key, String value) async {
   final SharedPreferences prefs = await SharedPreferences.getInstance();
   await prefs.setString(key, value);
+}
+
+void saveBool(String key, bool value) async {
+  final SharedPreferences prefs = await SharedPreferences.getInstance();
+  await prefs.setBool(key, value);
 }
 
 Future<bool> isStored(String key) async {
@@ -165,4 +178,23 @@ Future<bool> isStored(String key) async {
 Future<String> get(String key) async {
   final SharedPreferences prefs = await SharedPreferences.getInstance();
   return prefs.getString(key) ?? "Null";
+}
+
+Future<bool> getBool(String key) async {
+  final SharedPreferences prefs = await SharedPreferences.getInstance();
+  return prefs.getBool(key) ?? true;
+}
+
+Future<String> load(String key, String def) async {
+  if (await isStored(key)) {
+    return await get(key);
+  }
+  return def;
+}
+
+Future<bool> loadBool(String key, bool def) async {
+  if (await isStored(key)) {
+    return await getBool(key);
+  }
+  return def;
 }
