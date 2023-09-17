@@ -4,6 +4,8 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:localconnect/data.dart';
 
+const String seperator = "--|-|--";
+
 // server
 Future<bool> startServerSocket(
     ServerSocket? serverSocket,
@@ -12,11 +14,13 @@ Future<bool> startServerSocket(
     BuildContext context,
     Function accCallback,
     Function cancelCallback) async {
+      final chatMessagesNotifier =
+            providerContainer.read(chatMessagesProvider.notifier);
   serverSocket = await ServerSocket.bind(localIP, port, shared: true);
 
   serverSocket.listen((Socket clientSocket) {
     clientSocket.listen((Uint8List data) async {
-      final parts = utf8.decode(data).split("|");
+      final parts = utf8.decode(data).split(seperator);
 
       if (parts[0] == 'GET_METADATA') {
         final deviceName = await getDeviceName();
@@ -39,8 +43,6 @@ Future<bool> startServerSocket(
 
       if (parts[0] == 'MESSAGE') {
         final message = parts[1];
-        final chatMessagesNotifier =
-            providerContainer.read(chatMessagesProvider.notifier);
         chatMessagesNotifier.addMessage(message, false, info: parts[2] == "1");
       }
     });
@@ -67,7 +69,7 @@ void askMetadataRequest(String ipAddress, int port, Function setstate) {
 // ask accept
 void askAccept(String rec, int port, String device, Function setAccAns) {
   Socket.connect(rec, port).then((clientSocket) {
-    String askRequest = 'ASK_ACCEPT|$device';
+    String askRequest = 'ASK_ACCEPT$seperator$device';
     clientSocket.add(Uint8List.fromList(utf8.encode(askRequest)));
 
     clientSocket.listen((Uint8List data) {
@@ -94,7 +96,7 @@ void sendCancel(String ip, int port) {
 // sending msg
 void sendMessage(String party, int port, String msg, String info) {
   Socket.connect(party, port).then((clientSocket) {
-    String msgRequest = 'MESSAGE|$msg|$info';
+    String msgRequest = 'MESSAGE$seperator$msg$seperator$info';
     clientSocket.add(Uint8List.fromList(utf8.encode(msgRequest)));
     clientSocket.close();
   }).catchError((error) {

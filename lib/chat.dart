@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localconnect/data.dart';
 import 'package:localconnect/socket.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   final DiscoveredDevice me;
@@ -28,6 +29,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Color meColor = Colors.blue;
   Color youColor = Colors.green;
   bool markdown = true;
+  final notifier = providerContainer.read(chatMessagesProvider.notifier);
+  bool isComputer = Platform.isWindows || Platform.isLinux || Platform.isMacOS;
+  bool isMobile = Platform.isAndroid || Platform.isIOS;
 
   void _scrollToBottom() {
     _scrollController.animateTo(
@@ -99,21 +103,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     super.dispose();
   }
 
-  bool isComputer() {
-    return Platform.isWindows || Platform.isLinux || Platform.isMacOS;
-  }
-
-  bool isMobile() {
-    return Platform.isAndroid || Platform.isIOS;
-  }
-
   void _sendMessage(String message, {bool info = false}) {
     if (message.isNotEmpty) {
-      sendMessage(widget.peer.ip, widget.port, message, info ? "1" : "0");
-      final notifier = providerContainer.read(chatMessagesProvider.notifier);
+      sendMessage(
+          widget.peer.ip, widget.port, message.trim(), info ? "1" : "0");
       notifier.addMessage(message, true, info: info);
       _messageController.clear();
-    } else {
+    } else if (isMobile) {
       _messageNode.unfocus();
     }
   }
@@ -128,7 +124,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       child: Scaffold(
         appBar: AppBar(title: Text(widget.peer.deviceName)),
         body: Column(
-          children: <Widget>[
+          children: [
             const SizedBox(
               height: 10,
             ),
@@ -140,9 +136,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 children: <Widget>[
                   Expanded(
                     child: TextField(
-                      autofocus: !isMobile(),
                       focusNode: _messageNode,
                       controller: _messageController,
+                      autofocus: isComputer,
                       maxLines: null,
                       decoration: InputDecoration(
                         hintText: 'Enter your message...',
@@ -155,11 +151,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           borderSide: BorderSide.none,
                         ),
                       ),
-                      onSubmitted: (message) {
-                        _sendMessage(message);
-                        _messageNode.requestFocus();
-                      },
-                      // onTapOutside: (event) => _messageNode.unfocus(),
                     ),
                   ),
                   IconButton(
@@ -169,6 +160,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     ),
                     onPressed: () {
                       _sendMessage(_messageController.text);
+                      _messageNode.requestFocus();
                     },
                   ),
                 ],
@@ -181,41 +173,69 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Expanded buildMsgs() {
+    DateTime? prevMessageTime;
+
     return Expanded(
       child: ListView.builder(
         controller: _scrollController,
         itemCount: messages.length,
         itemBuilder: (context, index) {
           final message = messages[index];
+          final showTime = prevMessageTime == null ||
+              message.time.minute != prevMessageTime?.minute;
+          prevMessageTime = message.time;
 
-          return Align(
-            alignment: message.isInfo
-                ? Alignment.center
-                : message.isYou
-                    ? Alignment.centerRight
-                    : Alignment.centerLeft,
-            child: Container(
-              margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 20),
-              padding: message.isInfo
-                  ? const EdgeInsets.all(6)
-                  : const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: message.isInfo
-                    ? Colors.grey
+          return Column(
+            children: [
+              if (showTime)
+                Padding(
+                  padding: const EdgeInsets.all(2),
+                  child: Text(
+                    "${message.time.hour.toString().padLeft(2, '0')}:${message.time.minute.toString().padLeft(2, '0')}",
+                    style: const TextStyle(
+                      color: Colors.grey,
+                      fontSize: 10,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              Align(
+                alignment: message.isInfo
+                    ? Alignment.center
                     : message.isYou
-                        ? meColor
-                        : youColor,
-                borderRadius: BorderRadius.circular(8),
+                        ? Alignment.centerRight
+                        : Alignment.centerLeft,
+                child: Container(
+                  margin:
+                      const EdgeInsets.symmetric(vertical: 4, horizontal: 20),
+                  padding: message.isInfo
+                      ? const EdgeInsets.all(6)
+                      : const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: message.isInfo
+                        ? Colors.grey
+                        : message.isYou
+                            ? meColor
+                            : youColor,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: markdown
+                      ? SizedBox(
+                          child: MarkdownBody(
+                            onTapLink: (text, href, title) async {
+                              final url = Uri.parse(href!);
+                              if (await canLaunchUrl(url)) {
+                                await launchUrl(url);
+                              }
+                            },
+                            data: message.text,
+                            selectable: true,
+                          ),
+                        )
+                      : SelectableText(message.text),
+                ),
               ),
-              child: markdown
-                  ? SizedBox(
-                      child: MarkdownBody(
-                        data: message.text,
-                        selectable: true,
-                      ),
-                    )
-                  : Text(message.text),
-            ),
+            ],
           );
         },
       ),

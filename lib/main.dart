@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localconnect/chat.dart';
 import 'package:localconnect/data.dart';
@@ -98,6 +99,7 @@ class _HomePageState extends State<HomePage> {
   // new device's metadata received
   void setDisState(String ipAddress, String response) {
     if (mounted) {
+      showSnack("Discovered $response");
       setState(() {
         discoveredDevices.add(DiscoveredDevice(ipAddress, response));
       });
@@ -172,10 +174,12 @@ class _HomePageState extends State<HomePage> {
             serverSocket, localIP, port, context, getAcceptAns, cancelPopup);
         initiateLocalName();
       }
-      // int lastIndex = localIP.lastIndexOf('.');
-      // int secondLastIndex = localIP.lastIndexOf('.', lastIndex - 1);
+
+      // print(localIP.split('.').take(2).join('.'));
       final stream = NetworkDiscovery.discover(
-          localIP.substring(0, localIP.lastIndexOf('.')), port);
+        localIP.split('.').take(3).join('.'),
+        port,
+      );
 
       stream.listen((NetworkAddress addr) {
         if (addr.ip != localIP) {
@@ -185,6 +189,14 @@ class _HomePageState extends State<HomePage> {
       if (tapped) {
         showSnack("Re-Freshed Configarations");
       }
+    }
+  }
+
+  void discoverAddr(String ip) async {
+    showSnack("Checking $ip");
+    final stream = await NetworkDiscovery.discoverFromAddress(ip, port);
+    if (stream.ip != localIP) {
+      askMetadataRequest(stream.ip, port, setDisState);
     }
   }
 
@@ -198,11 +210,18 @@ class _HomePageState extends State<HomePage> {
         actions: [
           IconButton(
             onPressed: () {
+              showIpAddressDialog();
+            },
+            icon: const Icon(
+              Icons.add,
+            ),
+          ),
+          IconButton(
+            onPressed: () {
               startDeviceDiscovery(tapped: true);
             },
             icon: const Icon(
               Icons.refresh_outlined,
-              semanticLabel: "Re Discover",
             ),
           ),
           IconButton(
@@ -454,5 +473,132 @@ class _HomePageState extends State<HomePage> {
         );
       },
     );
+  }
+
+  // Function to show the IP address entry dialog
+  void showIpAddressDialog() {
+    List<String> ipAddress = localIP.split('.');
+    final TextEditingController ip3 = TextEditingController();
+    final TextEditingController ip4 = TextEditingController();
+    const textstyle = TextStyle(fontSize: 30, color: Colors.grey);
+    const typestyle = TextStyle(fontSize: 30, color: Colors.white);
+    final FocusNode ip3Focus = FocusNode();
+    final FocusNode ip4Focus = FocusNode();
+
+    void changeFocusIfNeeded(
+      String value,
+    ) {
+      if (value.length == 3) {
+        ip3Focus.unfocus();
+        ip4Focus.requestFocus();
+      }
+    }
+
+    showModalBottomSheet(
+      isDismissible: false,
+      context: context,
+      builder: (BuildContext context) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 25),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Row(
+                children: [
+                  Text(ipAddress[0], style: textstyle),
+                  const Text(".", style: textstyle),
+                  Text(ipAddress[1], style: textstyle),
+                  const Text(".", style: textstyle),
+                  Expanded(
+                    child: TextField(
+                      textAlign: TextAlign.center,
+                      controller: ip3,
+                      style: typestyle,
+                      minLines: 1,
+                      focusNode: ip3Focus,
+                      autofocus: ip3.text.isEmpty,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        LengthLimitingTextInputFormatter(3),
+                        FilteringTextInputFormatter.digitsOnly
+                      ],
+                      onChanged: (value) {
+                        changeFocusIfNeeded(value);
+                      },
+                    ),
+                  ),
+                  const Text(".", style: textstyle),
+                  Expanded(
+                    child: TextField(
+                      textAlign: TextAlign.center,
+                      controller: ip4,
+                      style: typestyle,
+                      minLines: 1,
+                      focusNode: ip4Focus,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        LengthLimitingTextInputFormatter(3),
+                        FilteringTextInputFormatter.digitsOnly
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  ElevatedButton(
+                    child: const Text("Cancel"),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                  ElevatedButton(
+                    child: const Text("Discover"),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      String enteredIpAddress =
+                          "${ipAddress[0]}.${ipAddress[1]}.${ip3.text}.${ip4.text}";
+                      if (isValidIPAddress(enteredIpAddress)) {
+                        discoverAddr(enteredIpAddress);
+                      } else {
+                        showSnack("Not a Valid IP Address");
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // check valid ip
+  bool isValidIPAddress(String input) {
+    final RegExp ipv4RegExp = RegExp(
+      r'^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$',
+      caseSensitive: false,
+    );
+
+    final RegExpMatch? match = ipv4RegExp.firstMatch(input);
+
+    if (match == null) {
+      return false;
+    }
+
+    for (int i = 1; i <= 4; i++) {
+      final int octet = int.parse(match[i]!);
+      if (octet < 0 || octet > 255) {
+        return false;
+      }
+    }
+
+    return true;
   }
 }

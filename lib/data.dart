@@ -8,6 +8,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 const Color mainColor = Colors.deepOrange;
 
+const String deviceNameKey = "DeviceName";
+const String youColorKey = 'YouColor';
+const String meColorKey = 'MeColor';
+const String markdownKey = 'MarkDown';
+
+final String defaultMeColor = Colors.blue.hashCode.toString();
+final String defaultYouColor = Colors.green.hashCode.toString();
+const bool defaultMarkdown = false;
+
 ///////////////////////////////////////////////////////////// Custom Classes
 
 class DiscoveredDevice {
@@ -49,9 +58,10 @@ class DiscoveredNetwork {
 class Message {
   final String text;
   final bool isYou;
+  final DateTime time;
   final bool isInfo;
 
-  Message(this.text, this.isYou, {this.isInfo = false});
+  Message(this.text, this.isYou, this.time, {this.isInfo = false});
 }
 
 ///////////////////////////////////////////////////////////// Others
@@ -129,7 +139,7 @@ class ChatMessagesNotifier extends StateNotifier<List<Message>> {
   }
 
   void addMessage(String message, bool you, {bool info = false}) {
-    state = [...state, Message(message, you, isInfo: info)];
+    state = [...state, Message(message, you, DateTime.now(), isInfo: info)];
   }
 }
 
@@ -149,16 +159,6 @@ SnackBar snackbar(String content) {
 }
 
 /////////////////////////////////////////////////// Shared Prefrences
-
-const String deviceNameKey = "DeviceName";
-const String youColorKey = 'YouColor';
-const String meColorKey = 'MeColor';
-const String markdownKey = 'MarkDown';
-
-// Default custom colors
-final String defaultMeColor = Colors.blue.hashCode.toString();
-final String defaultYouColor = Colors.green.hashCode.toString();
-const bool defaultMarkdown = true;
 
 void save(String key, String value) async {
   final SharedPreferences prefs = await SharedPreferences.getInstance();
