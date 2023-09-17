@@ -13,8 +13,10 @@ const String youColorKey = 'YouColor';
 const String meColorKey = 'MeColor';
 const String markdownKey = 'MarkDown';
 
-final String defaultMeColor = Colors.blue.hashCode.toString();
-final String defaultYouColor = Colors.green.hashCode.toString();
+const Color defaultmeColor = Colors.blue;
+const Color defaultyouColor = Colors.green;
+final String defaultMeColor = defaultmeColor.hashCode.toString();
+final String defaultYouColor = defaultyouColor.hashCode.toString();
 const bool defaultMarkdown = false;
 
 ///////////////////////////////////////////////////////////// Custom Classes
@@ -156,6 +158,29 @@ SnackBar snackbar(String content) {
       ),
     ),
   );
+}
+
+// check valid ip
+bool isValidIPAddress(String input) {
+  final RegExp ipv4RegExp = RegExp(
+    r'^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$',
+    caseSensitive: false,
+  );
+
+  final RegExpMatch? match = ipv4RegExp.firstMatch(input);
+
+  if (match == null) {
+    return false;
+  }
+
+  for (int i = 1; i <= 4; i++) {
+    final int octet = int.parse(match[i]!);
+    if (octet < 0 || octet > 255) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 /////////////////////////////////////////////////// Shared Prefrences

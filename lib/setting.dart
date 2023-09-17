@@ -25,13 +25,13 @@ class _SettingsState extends State<Settings> {
       TextEditingController(text: "4321");
 
   // colors
-  Color meColor = Colors.blue;
-  Color youColor = Colors.green;
+  Color meColor = defaultmeColor;
+  Color youColor = defaultyouColor;
   late Color tempMe;
   late Color tempYou;
 
   // markdown
-  bool markdown = true;
+  bool markdown = defaultMarkdown;
 
   // initial device name
   void initailizeDevicename() {
@@ -295,7 +295,7 @@ class _SettingsState extends State<Settings> {
                     youColor = value;
                   }
                 },
-                colorPickerWidth: 250,
+                colorPickerWidth: 200,
                 labelTypes: const [ColorLabelType.rgb],
               ),
               Row(

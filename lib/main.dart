@@ -226,6 +226,7 @@ class _HomePageState extends State<HomePage> {
           ),
           IconButton(
             onPressed: () async {
+              isAvailable = false;
               await Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) {
@@ -236,6 +237,7 @@ class _HomePageState extends State<HomePage> {
                 ),
               );
               if (!mounted) return;
+              isAvailable = true;
               initiateLocalName();
             },
             icon: const Icon(Icons.settings_outlined),
@@ -369,7 +371,6 @@ class _HomePageState extends State<HomePage> {
                         client.write("REJECTED");
                         client.close();
                         Navigator.of(context).pop();
-
                         isAvailable = true;
                       },
                     ),
@@ -378,7 +379,6 @@ class _HomePageState extends State<HomePage> {
                       onPressed: () {
                         client.write("ACCEPTED");
                         client.close();
-
                         Navigator.of(context).pop();
                         acceptCallback(asking);
                       },
@@ -401,82 +401,84 @@ class _HomePageState extends State<HomePage> {
       isDismissible: false,
       context: context,
       builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(10),
-          height: 150,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: !isRequesting
-                ? [
-                    Text(
-                        "Do you want to start a chat with ${receiver.deviceName}?"),
-                    const SizedBox(
-                      height: 20,
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        ElevatedButton(
-                          child: const Text("Cancel"),
-                          onPressed: () {
-                            isRequesting = false;
-                            isAvailable = true;
-
-                            Navigator.of(context).pop();
-                          },
-                        ),
-                        ElevatedButton(
-                          child: const Text("Ask"),
-                          onPressed: () {
-                            isRequesting = true;
-                            isAvailable = false;
-                            peer = receiver;
-
-                            Navigator.of(context).pop();
-                            showChatRequestPopup(receiver);
-                            askAccept(receiver.ip, port, localName, setAccAns);
-                          },
-                        ),
-                      ],
-                    )
-                  ]
-                : [
-                    Text("Waiting for ${receiver.deviceName} to accept"),
-                    const SizedBox(
-                      height: 20,
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        ElevatedButton(
-                          child: const Text("Cancel"),
-                          onPressed: () {
-                            sendCancel(receiver.ip, port);
-
-                            isRequesting = false;
-                            isAvailable = true;
-
-                            Navigator.of(context).pop();
-                          },
-                        ),
-                        const Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(12),
-                            child: CircularProgressIndicator(),
+        return StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+          return Container(
+            padding: const EdgeInsets.all(10),
+            height: 150,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: !isRequesting
+                  ? [
+                      Text(
+                          "Do you want to start a chat with ${receiver.deviceName}?"),
+                      const SizedBox(
+                        height: 20,
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          ElevatedButton(
+                            child: const Text("Cancel"),
+                            onPressed: () {
+                              isRequesting = false;
+                              isAvailable = true;
+                              Navigator.of(context).pop();
+                            },
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
-          ),
-        );
+                          ElevatedButton(
+                            child: const Text("Ask"),
+                            onPressed: () {
+                              isRequesting = true;
+                              isAvailable = false;
+                              peer = receiver;
+                              askAccept(
+                                  receiver.ip, port, localName, setAccAns);
+                              if (mounted) {
+                                setState(() {});
+                              }
+                            },
+                          ),
+                        ],
+                      )
+                    ]
+                  : [
+                      Text("Waiting for ${receiver.deviceName} to accept"),
+                      const SizedBox(
+                        height: 20,
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          ElevatedButton(
+                            child: const Text("Cancel"),
+                            onPressed: () {
+                              sendCancel(receiver.ip, port);
+                              isRequesting = false;
+                              isAvailable = true;
+                              Navigator.of(context).pop();
+                            },
+                          ),
+                          const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(12),
+                              child: CircularProgressIndicator(),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+            ),
+          );
+        });
       },
     );
   }
 
   // Function to show the IP address entry dialog
   void showIpAddressDialog() {
+    isAvailable = false;
     List<String> ipAddress = localIP.split('.');
     final TextEditingController ip3 = TextEditingController();
     final TextEditingController ip4 = TextEditingController();
@@ -499,7 +501,7 @@ class _HomePageState extends State<HomePage> {
       context: context,
       builder: (BuildContext context) {
         return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 25),
+          padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 25),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -507,9 +509,9 @@ class _HomePageState extends State<HomePage> {
               Row(
                 children: [
                   Text(ipAddress[0], style: textstyle),
-                  const Text(".", style: textstyle),
+                  const Text(" . ", style: textstyle),
                   Text(ipAddress[1], style: textstyle),
-                  const Text(".", style: textstyle),
+                  const Text(" . ", style: textstyle),
                   Expanded(
                     child: TextField(
                       textAlign: TextAlign.center,
@@ -528,7 +530,7 @@ class _HomePageState extends State<HomePage> {
                       },
                     ),
                   ),
-                  const Text(".", style: textstyle),
+                  const Text(" . ", style: textstyle),
                   Expanded(
                     child: TextField(
                       textAlign: TextAlign.center,
@@ -555,12 +557,14 @@ class _HomePageState extends State<HomePage> {
                     child: const Text("Cancel"),
                     onPressed: () {
                       Navigator.of(context).pop();
+                      isAvailable = true;
                     },
                   ),
                   ElevatedButton(
                     child: const Text("Discover"),
                     onPressed: () {
                       Navigator.of(context).pop();
+                      isAvailable = true;
                       String enteredIpAddress =
                           "${ipAddress[0]}.${ipAddress[1]}.${ip3.text}.${ip4.text}";
                       if (isValidIPAddress(enteredIpAddress)) {
@@ -577,28 +581,5 @@ class _HomePageState extends State<HomePage> {
         );
       },
     );
-  }
-
-  // check valid ip
-  bool isValidIPAddress(String input) {
-    final RegExp ipv4RegExp = RegExp(
-      r'^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$',
-      caseSensitive: false,
-    );
-
-    final RegExpMatch? match = ipv4RegExp.firstMatch(input);
-
-    if (match == null) {
-      return false;
-    }
-
-    for (int i = 1; i <= 4; i++) {
-      final int octet = int.parse(match[i]!);
-      if (octet < 0 || octet > 255) {
-        return false;
-      }
-    }
-
-    return true;
   }
 }

@@ -26,9 +26,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _messageController = TextEditingController();
   final FocusNode _messageNode = FocusNode();
-  Color meColor = Colors.blue;
-  Color youColor = Colors.green;
-  bool markdown = true;
+  Color meColor = defaultmeColor;
+  Color youColor = defaultyouColor;
+  bool markdown = defaultMarkdown;
   final notifier = providerContainer.read(chatMessagesProvider.notifier);
   bool isComputer = Platform.isWindows || Platform.isLinux || Platform.isMacOS;
   bool isMobile = Platform.isAndroid || Platform.isIOS;
