@@ -28,6 +28,7 @@ AppDir:
       - sourceline: deb http://security.ubuntu.com/ubuntu/ jammy-security main restricted
       - sourceline: deb http://security.ubuntu.com/ubuntu/ jammy-security universe
       - sourceline: deb http://security.ubuntu.com/ubuntu/ jammy-security multiverse
+    include: []
     exclude:
       - adwaita-icon-theme:*
   runtime:
