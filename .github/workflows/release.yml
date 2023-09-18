@@ -219,14 +219,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Draft release
-        id: draft_release
-        uses: release-drafter/release-drafter@v5
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag: v${{ needs.build.outputs.version }}
-          name: v${{ needs.build.outputs.version }}
+          tag_name: v${{ needs.build.outputs.version }}
+          release_name: Release v${{ needs.build.outputs.version }}
+          draft: false
+          prerelease: false
 
       # APK
       - name: Download apk file
@@ -243,7 +245,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.draft_release.outputs.upload_url }}
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: result.apk
           asset_name: LocalConnect-${{ needs.build.outputs.version }}.apk
           asset_content_type: application/vnd.android.package-archive
@@ -266,7 +268,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.draft_release.outputs.upload_url }}
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: result.tar.gz
           asset_name: LocalConnect-${{ needs.build.outputs.version }}-linux-x86-64.tar.gz
           asset_content_type: application/gzip
@@ -286,7 +288,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.draft_release.outputs.upload_url }}
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: result.deb
           asset_name: LocalConnect-${{ needs.build.outputs.version }}-linux-x86-64.deb
           asset_content_type: application/vnd.debian.binary-package
@@ -306,7 +308,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.draft_release.outputs.upload_url }}
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: result.zip
           asset_name: LocalConnect-${{ needs.build.outputs.version }}-windows-x86-64.zip
           asset_content_type: application/zip
