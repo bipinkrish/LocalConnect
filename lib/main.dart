@@ -8,9 +8,11 @@ import 'package:localconnect/socket.dart';
 import 'package:network_discovery/network_discovery.dart';
 import 'package:window_size/window_size.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 
 void main() {
-  WidgetsFlutterBinding.ensureInitialized();
+  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   if (Platform.isWindows || Platform.isLinux || Platform.isWindows) {
     setWindowTitle("Local Connect");
   }
@@ -62,6 +64,7 @@ class _HomePageState extends State<HomePage> {
     initiateLocalIP();
     initiateLocalName();
     super.initState();
+    FlutterNativeSplash.remove();
   }
 
   // initiate local ip

@@ -25,6 +25,7 @@ dependencies:
   url_launcher: ^6.1.14
   adaptive_theme: ^3.4.0
   toggle_switch: ^2.1.0
+  flutter_native_splash: ^2.3.2
 
   window_size:
     git:
@@ -96,3 +97,10 @@ msix_config:
     task_id: localconnect
     enabled: false
     parameters: autostart
+
+flutter_native_splash:
+  color: "#FF5722"
+  image: "assets/logo.png"
+
+  android_12:
+    icon_background_color: "#FF5722"
