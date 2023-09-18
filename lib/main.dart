@@ -42,6 +42,7 @@ class _HomePageState extends State<HomePage> {
   bool isAccepted = false;
   bool isRequesting = false;
   bool isAvailable = true;
+  bool infoTab = true;
 
   late DiscoveredDevice peer;
   DiscoveredDevice asking = DiscoveredDevice("", "");
@@ -194,62 +195,110 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  InkWell getListBox(DiscoveredDevice device) {
+    const int pad = 16;
+
+    return InkWell(
+      onTap: () {
+        showChatRequestPopup(device);
+      },
+      child: Container(
+        height: 100,
+        width: (MediaQuery.of(context).size.width / 2) - (pad * 2),
+        margin: EdgeInsets.all(pad.toDouble()),
+        decoration: BoxDecoration(
+          color: mainColor,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Text(
+                device.deviceName,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
+            ),
+            Text(
+              device.ip,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final deviceList = discoveredDevices.toList();
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Local Connect"),
-        actions: [
-          IconButton(
-            onPressed: () {
-              showIpAddressDialog();
-            },
-            icon: const Icon(
-              Icons.add,
-            ),
-          ),
-          IconButton(
-            onPressed: () {
-              startDeviceDiscovery(tapped: true);
-            },
-            icon: const Icon(
-              Icons.refresh_outlined,
-            ),
-          ),
-          IconButton(
-            onPressed: () async {
-              isAvailable = false;
-              await Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (context) {
-                    return Settings(
-                      initialDeviceName: localName,
-                    );
-                  },
-                ),
-              );
-              if (!mounted) return;
-              isAvailable = true;
-              initiateLocalName();
-            },
-            icon: const Icon(Icons.settings_outlined),
-          ),
-        ],
-      ),
       body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
+        children: [
+          // actions
           const SizedBox(
-            height: 10,
+            height: 60,
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              IconButton(
+                onPressed: () {
+                  infoTab = !infoTab;
+                  refresh();
+                },
+                icon: infoTab
+                    ? const Icon(Icons.keyboard_arrow_down_outlined)
+                    : const Icon(Icons.keyboard_arrow_up_outlined),
+              ),
+              IconButton(
+                onPressed: () {
+                  showIpAddressDialog();
+                },
+                icon: const Icon(
+                  Icons.add,
+                ),
+              ),
+              IconButton(
+                onPressed: () {
+                  startDeviceDiscovery(tapped: true);
+                },
+                icon: const Icon(
+                  Icons.refresh_outlined,
+                ),
+              ),
+              IconButton(
+                onPressed: () async {
+                  isAvailable = false;
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) {
+                        return Settings(
+                          initialDeviceName: localName,
+                        );
+                      },
+                    ),
+                  );
+                  if (!mounted) return;
+                  isAvailable = true;
+                  initiateLocalName();
+                },
+                icon: const Icon(Icons.settings_outlined),
+              ),
+            ],
           ),
 
           // you box
           Visibility(
-            visible: (localName.isNotEmpty && localIP.isNotEmpty),
+            visible: (infoTab && localName.isNotEmpty && localIP.isNotEmpty),
             child: Column(
               children: [
+                const SizedBox(
+                  height: 10,
+                ),
                 //first line
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -298,35 +347,42 @@ class _HomePageState extends State<HomePage> {
                         style: const TextStyle(color: mainColor))
                   ],
                 ),
+                const Divider(
+                  height: 5,
+                  thickness: 1,
+                  color: mainColor,
+                ),
               ],
             ),
           ),
 
-          const Divider(
-            height: 5,
-            thickness: 1,
-            color: mainColor,
-          ),
+          for (int i = 0; i < deviceList.length; i = i + 2)
+            Row(
+              children: [
+                if (i < deviceList.length) getListBox(deviceList[i]),
+                if (i + 1 < deviceList.length) getListBox(deviceList[i + 1]),
+              ],
+            )
 
           // Display discovered devices
-          Expanded(
-            child: ListView.builder(
-              itemCount: deviceList.length,
-              itemBuilder: (context, index) {
-                final device = deviceList[index];
-                return ListTile(
-                  title: Text(device.deviceName),
-                  subtitle: Text(device.ip),
-                  trailing: ElevatedButton(
-                    onPressed: () {
-                      showChatRequestPopup(device);
-                    },
-                    child: const Text("Connect"),
-                  ),
-                );
-              },
-            ),
-          ),
+          // Flexible(
+          //   child: ListView.builder(
+          //     itemCount: deviceList.length,
+          //     itemBuilder: (context, index) {
+          //       final device = deviceList[index];
+          //       return ListTile(
+          //         title: Text(device.deviceName),
+          //         subtitle: Text(device.ip),
+          //         trailing: ElevatedButton(
+          //           onPressed: () {
+          //             showChatRequestPopup(device);
+          //           },
+          //           child: const Text("Connect"),
+          //         ),
+          //       );
+          //     },
+          //   ),
+          // ),
         ],
       ),
     );
@@ -410,8 +466,20 @@ class _HomePageState extends State<HomePage> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: !isRequesting
                   ? [
-                      Text(
-                          "Do you want to start a chat with ${receiver.deviceName}?"),
+                      RichText(
+                        text: TextSpan(
+                          children: <TextSpan>[
+                            const TextSpan(
+                                text: "Do you want to start a chat with "),
+                            TextSpan(
+                              text: receiver.deviceName,
+                              style: const TextStyle(color: mainColor),
+                            ),
+                          ],
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
                       const SizedBox(
                         height: 20,
                       ),
@@ -443,7 +511,20 @@ class _HomePageState extends State<HomePage> {
                       )
                     ]
                   : [
-                      Text("Waiting for ${receiver.deviceName} to accept"),
+                      RichText(
+                        text: TextSpan(
+                          children: <TextSpan>[
+                            const TextSpan(text: "Waiting for "),
+                            TextSpan(
+                              text: receiver.deviceName,
+                              style: const TextStyle(color: mainColor),
+                            ),
+                            const TextSpan(text: " to accept"),
+                          ],
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
                       const SizedBox(
                         height: 20,
                       ),

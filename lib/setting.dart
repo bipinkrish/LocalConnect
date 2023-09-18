@@ -110,24 +110,46 @@ class _SettingsState extends State<Settings> {
   }
 
   // container for setting row
-  Padding getCont(
+  ListTile getCont(
       {dynamic leading,
       title,
       dynamic subtitle,
       dynamic trailing,
       bool dense = false}) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: leading,
+      title: title,
+      subtitle: subtitle,
+      trailing: trailing,
+      dense: dense,
+    );
+  }
+
+  // group settings
+  Padding getGroup(String title, List<ListTile> members) {
     return Padding(
-      padding: const EdgeInsets.only(top: 10),
+      padding: const EdgeInsets.all(10),
       child: Container(
-        padding: const EdgeInsets.only(top: 5, bottom: 5, left: 15, right: 10),
-        color: Colors.black26,
-        child: ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: leading,
-          title: title,
-          subtitle: subtitle,
-          trailing: trailing,
-          dense: dense,
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: Theme.of(context).brightness == Brightness.light
+              ? Colors.brown.shade50
+              : Colors.black26,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Text(
+                title,
+                style:
+                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+              ),
+            ),
+            for (ListTile mem in members) mem
+          ],
         ),
       ),
     );
@@ -142,177 +164,213 @@ class _SettingsState extends State<Settings> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // device name
-            getCont(
-              title: const Text(
-                "Device Name",
-                style: TextStyle(color: mainColor),
-              ),
-              subtitle: TextField(
-                controller: _deviceNameController,
-                focusNode: _deviceNameNode,
-                onTapOutside: (event) => _deviceNameNode.unfocus(),
-              ),
-              trailing: IconButton(
-                onPressed: () {
-                  _deviceNameNode.unfocus();
-                  if (_deviceNameValid) {
-                    save(deviceNameKey, _deviceNameController.text);
-                    widget.initialDeviceName = _deviceNameController.text;
-                    _deviceNameValid = false;
-                    refresh();
-                    showSnack("Device Name Updated");
-                  } else if (widget.initialDeviceName !=
-                      _deviceNameController.text) {
-                    showSnack("Please Enter a Valid Name");
-                  }
-                },
-                icon: Icon(
-                  Icons.done_outline,
-                  color: !_deviceNameValid ? Colors.grey : mainColor,
-                ),
-              ),
+            getGroup(
+              "General",
+              [
+                getThemeSet(),
+                getCustomMeSet(),
+                getCustomYouSet(),
+                getMarkdownSet()
+              ],
             ),
-
-            // port
-            getCont(
-              title: const Text(
-                "Port",
-                style: TextStyle(color: mainColor),
-              ),
-              subtitle: TextField(
-                controller: _portController,
-                focusNode: _portNode,
-                enabled: false,
-                onTapOutside: (event) => _portNode.unfocus(),
-              ),
-              trailing: IconButton(
-                onPressed: () {
-                  _portNode.unfocus();
-                },
-                icon: const Icon(
-                  Icons.lock_outline,
-                  color: Colors.grey,
-                ),
-              ),
+            getGroup(
+              "Network",
+              [
+                getNameSet(),
+                getDiscoerSet(),
+              ],
             ),
-
-            // ipv6
-            getCont(
-              title: const Text(
-                "IPv6",
-                style: TextStyle(color: mainColor),
-              ),
-              subtitle: const Text("not ready yet"),
-              trailing: CupertinoSwitch(
-                applyTheme: true,
-                value: false,
-                onChanged: (value) {},
-              ),
-            ),
-
-            // discoverable
-            getCont(
-              title: const Text(
-                "Discoverable",
-                style: TextStyle(color: mainColor),
-              ),
-              subtitle: const Text("not ready yet"),
-              trailing: CupertinoSwitch(
-                applyTheme: true,
-                value: false,
-                onChanged: (value) {},
-              ),
-            ),
-
-            // Custom me message color
-            getCont(
-              title: const Text(
-                "Me Color",
-                style: TextStyle(color: mainColor),
-              ),
-              subtitle: const Text("your side messages"),
-              trailing: IconButton(
-                onPressed: () {
-                  showColorSelecter(isMe: true);
-                },
-                icon: getColorPre(meColor),
-              ),
-            ),
-
-            // Custom you message color
-            getCont(
-              title: const Text(
-                "You Color",
-                style: TextStyle(color: mainColor),
-              ),
-              subtitle: const Text("other side messages"),
-              trailing: IconButton(
-                onPressed: () {
-                  showColorSelecter(isMe: false);
-                },
-                icon: getColorPre(youColor),
-              ),
-            ),
-
-            // markdown
-            getCont(
-              title: const Text(
-                "MarkDown",
-                style: TextStyle(color: mainColor),
-              ),
-              subtitle: const Text("parse mode"),
-              trailing: CupertinoSwitch(
-                applyTheme: true,
-                value: markdown,
-                onChanged: (value) {
-                  saveBool(markdownKey, value);
-                  markdown = value;
-                  refresh();
-                },
-              ),
-            ),
-
-            // theme mode
-            getCont(
-              title: const Text(
-                "Theme Mode",
-                style: TextStyle(color: mainColor),
-              ),
-              subtitle: const Text("switch between modes"),
-              trailing: ToggleSwitch(
-                initialLabelIndex: thememode,
-                totalSwitches: 3,
-                minHeight: 50,
-                minWidth: 50,
-                centerText: true,
-                activeBgColor: const [mainColor],
-                icons: const [
-                  Icons.light_mode_outlined,
-                  Icons.dark_mode_outlined,
-                  Icons.monitor_outlined
-                ],
-                onToggle: (index) {
-                  switch (index) {
-                    case 0:
-                      AdaptiveTheme.of(context).setLight();
-                      break;
-
-                    case 1:
-                      AdaptiveTheme.of(context).setDark();
-                      break;
-
-                    case 2:
-                      AdaptiveTheme.of(context).setSystem();
-                  }
-                  thememode = index!;
-                  saveInt(themeKey, index);
-                  refresh();
-                },
-              ),
-            )
+            getGroup("Advanced", [
+              getPortSet(),
+              getIpv6Set(),
+            ])
           ],
         ),
+      ),
+    );
+  }
+
+  // device name
+  ListTile getNameSet() {
+    return getCont(
+      title: const Text(
+        "Device Name",
+        style: TextStyle(color: mainColor),
+      ),
+      subtitle: TextField(
+        controller: _deviceNameController,
+        focusNode: _deviceNameNode,
+        onTapOutside: (event) => _deviceNameNode.unfocus(),
+      ),
+      trailing: IconButton(
+        onPressed: () {
+          _deviceNameNode.unfocus();
+          if (_deviceNameValid) {
+            save(deviceNameKey, _deviceNameController.text);
+            widget.initialDeviceName = _deviceNameController.text;
+            _deviceNameValid = false;
+            refresh();
+            showSnack("Device Name Updated");
+          } else if (widget.initialDeviceName != _deviceNameController.text) {
+            showSnack("Please Enter a Valid Name");
+          }
+        },
+        icon: Icon(
+          Icons.done_outline,
+          color: !_deviceNameValid ? Colors.grey : mainColor,
+        ),
+      ),
+    );
+  }
+
+  // port
+  ListTile getPortSet() {
+    return getCont(
+      title: const Text(
+        "Port",
+        style: TextStyle(color: mainColor),
+      ),
+      subtitle: TextField(
+        controller: _portController,
+        focusNode: _portNode,
+        enabled: false,
+        onTapOutside: (event) => _portNode.unfocus(),
+      ),
+      trailing: IconButton(
+        onPressed: () {
+          _portNode.unfocus();
+        },
+        icon: const Icon(
+          Icons.lock_outline,
+          color: Colors.grey,
+        ),
+      ),
+    );
+  }
+
+  // ipv6
+  ListTile getIpv6Set() {
+    return getCont(
+      title: const Text(
+        "IPv6",
+        style: TextStyle(color: mainColor),
+      ),
+      subtitle: const Text("not ready yet"),
+      trailing: CupertinoSwitch(
+        applyTheme: true,
+        value: false,
+        onChanged: (value) {},
+      ),
+    );
+  }
+
+  // discoverable
+  ListTile getDiscoerSet() {
+    return getCont(
+      title: const Text(
+        "Discoverable",
+        style: TextStyle(color: mainColor),
+      ),
+      subtitle: const Text("not ready yet"),
+      trailing: CupertinoSwitch(
+        applyTheme: true,
+        value: false,
+        onChanged: (value) {},
+      ),
+    );
+  }
+
+  // Custom yme message color
+  ListTile getCustomMeSet() {
+    return getCont(
+      title: const Text(
+        "Me Color",
+        style: TextStyle(color: mainColor),
+      ),
+      subtitle: const Text("your side messages"),
+      trailing: IconButton(
+        onPressed: () {
+          showColorSelecter(isMe: true);
+        },
+        icon: getColorPre(meColor),
+      ),
+    );
+  }
+
+  // Custom you message color
+  ListTile getCustomYouSet() {
+    return getCont(
+      title: const Text(
+        "You Color",
+        style: TextStyle(color: mainColor),
+      ),
+      subtitle: const Text("other side messages"),
+      trailing: IconButton(
+        onPressed: () {
+          showColorSelecter(isMe: false);
+        },
+        icon: getColorPre(youColor),
+      ),
+    );
+  }
+
+  // markdown
+  ListTile getMarkdownSet() {
+    return getCont(
+      title: const Text(
+        "MarkDown",
+        style: TextStyle(color: mainColor),
+      ),
+      subtitle: const Text("parse mode"),
+      trailing: CupertinoSwitch(
+        applyTheme: true,
+        value: markdown,
+        onChanged: (value) {
+          saveBool(markdownKey, value);
+          markdown = value;
+          refresh();
+        },
+      ),
+    );
+  }
+
+  // theme mode
+  ListTile getThemeSet() {
+    return getCont(
+      title: const Text(
+        "Theme Mode",
+        style: TextStyle(color: mainColor),
+      ),
+      subtitle: const Text("switch between modes"),
+      trailing: ToggleSwitch(
+        initialLabelIndex: thememode,
+        totalSwitches: 3,
+        minHeight: 50,
+        minWidth: 50,
+        centerText: true,
+        activeBgColor: const [mainColor],
+        icons: const [
+          Icons.light_mode_outlined,
+          Icons.dark_mode_outlined,
+          Icons.monitor_outlined
+        ],
+        onToggle: (index) {
+          switch (index) {
+            case 0:
+              AdaptiveTheme.of(context).setLight();
+              break;
+
+            case 1:
+              AdaptiveTheme.of(context).setDark();
+              break;
+
+            case 2:
+              AdaptiveTheme.of(context).setSystem();
+          }
+          thememode = index!;
+          saveInt(themeKey, index);
+          refresh();
+        },
       ),
     );
   }
@@ -351,8 +409,8 @@ class _SettingsState extends State<Settings> {
                       } else {
                         youColor = tempYou;
                       }
-                      refresh();
                       Navigator.pop(context);
+                      refresh();
                     },
                     child: const Text("Cancel"),
                   ),
@@ -366,8 +424,8 @@ class _SettingsState extends State<Settings> {
                       }
                       save(isMe ? meColorKey : youColorKey,
                           "${selected.alpha},${selected.red},${selected.green},${selected.blue}");
-                      refresh();
                       Navigator.pop(context);
+                      refresh();
                       showSnack("Custom ${isMe ? 'Me' : 'You'} Color Updated");
                     },
                     child: const Text("Done"),

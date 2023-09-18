@@ -143,7 +143,10 @@ class ChatMessagesNotifier extends StateNotifier<List<Message>> {
   }
 
   void addMessage(String message, bool you, {bool info = false}) {
-    state = [...state, Message(message, you, formatTime(DateTime.now()), isInfo: info)];
+    state = [
+      ...state,
+      Message(message, you, formatTime(DateTime.now()), isInfo: info)
+    ];
   }
 }
 
@@ -152,11 +155,18 @@ class ChatMessagesNotifier extends StateNotifier<List<Message>> {
 SnackBar snackbar(String content) {
   return SnackBar(
     duration: const Duration(milliseconds: 800),
-    backgroundColor: mainColor,
+    backgroundColor: mainColor.withAlpha(40),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(50),
+    ),
     content: Center(
       child: Text(
         content,
-        style: const TextStyle(color: Colors.white),
+        style: const TextStyle(
+          color: Colors.white,
+        ),
+        overflow: TextOverflow.ellipsis,
+        maxLines: 1,
       ),
     ),
   );
@@ -254,15 +264,18 @@ Future<int> loadInt(String key, int def) async {
 /////////////////////////////////////////////////////////// Themes
 
 final lighttheme = ThemeData.from(
+  useMaterial3: true,
   colorScheme: const ColorScheme.light(
     primary: mainColor,
     onPrimary: Colors.black,
-    onSecondary: Colors.black,
   ),
 );
 
 final darktheme = ThemeData.from(
-    colorScheme: const ColorScheme.dark(
-  primary: mainColor,
-  onPrimary: Colors.white,
-));
+  useMaterial3: true,
+  colorScheme: const ColorScheme.dark(
+    primary: mainColor,
+    onPrimary: Colors.white,
+    secondaryContainer: Colors.black26,
+  ),
+);
