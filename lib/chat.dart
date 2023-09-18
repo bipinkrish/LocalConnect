@@ -49,11 +49,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         final filteredMessages = updatedMessages.where((message) {
           return !(message.isYou && message.isInfo);
         }).toList();
-        if (mounted) {
-          setState(() {
-            messages = filteredMessages;
-          });
-        }
+        messages = filteredMessages;
+        refresh();
         _scrollToBottom();
       },
     );
@@ -68,16 +65,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     intList = temp.map((str) => int.tryParse(str) ?? 0).toList();
     youColor = Color.fromARGB(intList[0], intList[1], intList[2], intList[3]);
 
-    if (mounted) {
-      setState(() {});
-    }
+    refresh();
   }
 
   void initializeMarkdown() async {
     markdown = (await loadBool(markdownKey, defaultMarkdown));
-    if (mounted) {
-      setState(() {});
-    }
+    refresh();
   }
 
   @override
@@ -107,7 +100,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (message.isNotEmpty) {
       sendMessage(
           widget.peer.ip, widget.port, message.trim(), info ? "1" : "0");
-      notifier.addMessage(message, true, info: info);
+      notifier.addMessage(message.trim(), true, info: info);
       _messageController.clear();
     } else if (isMobile) {
       _messageNode.unfocus();
@@ -160,7 +153,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     ),
                     onPressed: () {
                       _sendMessage(_messageController.text);
-                      _messageNode.requestFocus();
+                      if (isComputer) _messageNode.requestFocus();
                     },
                   ),
                 ],
@@ -173,7 +166,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   }
 
   Expanded buildMsgs() {
-    DateTime? prevMessageTime;
+    String? prevMessageTime;
 
     return Expanded(
       child: ListView.builder(
@@ -181,8 +174,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         itemCount: messages.length,
         itemBuilder: (context, index) {
           final message = messages[index];
-          final showTime = prevMessageTime == null ||
-              message.time.minute != prevMessageTime?.minute;
+          final showTime =
+              prevMessageTime == null || message.time != prevMessageTime;
           prevMessageTime = message.time;
 
           return Column(
@@ -191,7 +184,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 Padding(
                   padding: const EdgeInsets.all(2),
                   child: Text(
-                    "${message.time.hour.toString().padLeft(2, '0')}:${message.time.minute.toString().padLeft(2, '0')}",
+                    message.time,
                     style: const TextStyle(
                       color: Colors.grey,
                       fontSize: 10,
@@ -240,5 +233,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         },
       ),
     );
+  }
+
+  void refresh() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 }

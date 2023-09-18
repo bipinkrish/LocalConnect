@@ -1,13 +1,13 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localconnect/chat.dart';
 import 'package:localconnect/data.dart';
 import 'package:localconnect/setting.dart';
 import 'package:localconnect/socket.dart';
 import 'package:network_discovery/network_discovery.dart';
 import 'package:window_size/window_size.dart';
+import 'package:adaptive_theme/adaptive_theme.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,18 +15,15 @@ void main() {
     setWindowTitle("Local Connect");
   }
   runApp(
-    ProviderScope(
-      parent: providerContainer,
-      child: MaterialApp(
+    AdaptiveTheme(
+      light: lighttheme,
+      dark: darktheme,
+      initial: AdaptiveThemeMode.system,
+      builder: (theme, darkTheme) => MaterialApp(
         title: "Local Connect",
+        theme: theme,
+        darkTheme: darkTheme,
         home: const HomePage(),
-        themeMode: ThemeMode.dark,
-        darkTheme: ThemeData.from(
-          colorScheme: const ColorScheme.dark(
-            primary: mainColor,
-            onPrimary: Colors.white,
-          ),
-        ),
       ),
     ),
   );
@@ -78,9 +75,7 @@ class _HomePageState extends State<HomePage> {
               serverSocket, localIP, port, context, getAcceptAns, cancelPopup);
           startDeviceDiscovery();
         }
-        if (mounted) {
-          setState(() {});
-        }
+        refresh();
       },
     );
   }
@@ -88,22 +83,18 @@ class _HomePageState extends State<HomePage> {
   // inititale local device name
   void initiateLocalName() {
     getDeviceName().then((value) {
-      if (mounted && localName != value) {
-        setState(() {
-          localName = value;
-        });
+      if (localName != value) {
+        localName = value;
+        refresh();
       }
     });
   }
 
   // new device's metadata received
   void setDisState(String ipAddress, String response) {
-    if (mounted) {
-      showSnack("Discovered $response");
-      setState(() {
-        discoveredDevices.add(DiscoveredDevice(ipAddress, response));
-      });
-    }
+    discoveredDevices.add(DiscoveredDevice(ipAddress, response));
+    showSnack("Discovered $response");
+    refresh();
   }
 
   // asked request response
@@ -175,7 +166,6 @@ class _HomePageState extends State<HomePage> {
         initiateLocalName();
       }
 
-      // print(localIP.split('.').take(2).join('.'));
       final stream = NetworkDiscovery.discover(
         localIP.split('.').take(3).join('.'),
         port,
@@ -190,6 +180,7 @@ class _HomePageState extends State<HomePage> {
         showSnack("Re-Freshed Configarations");
       }
     }
+    refresh();
   }
 
   void discoverAddr(String ip) async {
@@ -279,21 +270,24 @@ class _HomePageState extends State<HomePage> {
                       items: [
                         for (DiscoveredNetwork network in discoveredNetwork)
                           DropdownMenuItem(
-                              value: network.addr,
-                              child: Text(
-                                network.name,
-                                style: TextStyle(
-                                    color: localIP == network.addr
-                                        ? mainColor
-                                        : Colors.white),
-                              ))
+                            value: network.addr,
+                            child: Text(
+                              network.name,
+                              style: TextStyle(
+                                color: localIP == network.addr
+                                    ? mainColor
+                                    : Theme.of(context).brightness ==
+                                            Brightness.light
+                                        ? Colors.black
+                                        : Colors.white,
+                              ),
+                            ),
+                          )
                       ],
                       onChanged: (value) {
                         localIP = value!;
                         startDeviceDiscovery(tapped: true);
-                        if (mounted) {
-                          setState(() {});
-                        }
+                        refresh();
                       },
                     ),
                     Text(" on port $port"),
@@ -483,7 +477,12 @@ class _HomePageState extends State<HomePage> {
     final TextEditingController ip3 = TextEditingController();
     final TextEditingController ip4 = TextEditingController();
     const textstyle = TextStyle(fontSize: 30, color: Colors.grey);
-    const typestyle = TextStyle(fontSize: 30, color: Colors.white);
+    final typestyle = TextStyle(
+      fontSize: 30,
+      color: Theme.of(context).brightness == Brightness.light
+          ? Colors.black
+          : Colors.white,
+    );
     final FocusNode ip3Focus = FocusNode();
     final FocusNode ip4Focus = FocusNode();
 
@@ -581,5 +580,11 @@ class _HomePageState extends State<HomePage> {
         );
       },
     );
+  }
+
+  void refresh() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 }

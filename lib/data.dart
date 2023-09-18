@@ -12,12 +12,14 @@ const String deviceNameKey = "DeviceName";
 const String youColorKey = 'YouColor';
 const String meColorKey = 'MeColor';
 const String markdownKey = 'MarkDown';
+const String themeKey = 'ThemeMode';
 
 const Color defaultmeColor = Colors.blue;
 const Color defaultyouColor = Colors.green;
 final String defaultMeColor = defaultmeColor.hashCode.toString();
 final String defaultYouColor = defaultyouColor.hashCode.toString();
 const bool defaultMarkdown = false;
+const int defaultThemeMode = 2;
 
 ///////////////////////////////////////////////////////////// Custom Classes
 
@@ -60,7 +62,7 @@ class DiscoveredNetwork {
 class Message {
   final String text;
   final bool isYou;
-  final DateTime time;
+  final String time;
   final bool isInfo;
 
   Message(this.text, this.isYou, this.time, {this.isInfo = false});
@@ -141,7 +143,7 @@ class ChatMessagesNotifier extends StateNotifier<List<Message>> {
   }
 
   void addMessage(String message, bool you, {bool info = false}) {
-    state = [...state, Message(message, you, DateTime.now(), isInfo: info)];
+    state = [...state, Message(message, you, formatTime(DateTime.now()), isInfo: info)];
   }
 }
 
@@ -158,6 +160,14 @@ SnackBar snackbar(String content) {
       ),
     ),
   );
+}
+
+String formatTime(DateTime time) {
+  String period = time.hour < 12 ? 'AM' : 'PM';
+  int formattedHour = time.hour % 12 == 0 ? 12 : time.hour % 12;
+  String hour = formattedHour.toString().padLeft(2, '0');
+  String minute = time.minute.toString().padLeft(2, '0');
+  return '$hour:$minute $period';
 }
 
 // check valid ip
@@ -195,6 +205,11 @@ void saveBool(String key, bool value) async {
   await prefs.setBool(key, value);
 }
 
+void saveInt(String key, int value) async {
+  final SharedPreferences prefs = await SharedPreferences.getInstance();
+  await prefs.setInt(key, value);
+}
+
 Future<bool> isStored(String key) async {
   final SharedPreferences prefs = await SharedPreferences.getInstance();
   return prefs.containsKey(key);
@@ -210,6 +225,11 @@ Future<bool> getBool(String key) async {
   return prefs.getBool(key) ?? true;
 }
 
+Future<int> getInt(String key) async {
+  final SharedPreferences prefs = await SharedPreferences.getInstance();
+  return prefs.getInt(key) ?? 0;
+}
+
 Future<String> load(String key, String def) async {
   if (await isStored(key)) {
     return await get(key);
@@ -223,3 +243,26 @@ Future<bool> loadBool(String key, bool def) async {
   }
   return def;
 }
+
+Future<int> loadInt(String key, int def) async {
+  if (await isStored(key)) {
+    return await getInt(key);
+  }
+  return def;
+}
+
+/////////////////////////////////////////////////////////// Themes
+
+final lighttheme = ThemeData.from(
+  colorScheme: const ColorScheme.light(
+    primary: mainColor,
+    onPrimary: Colors.black,
+    onSecondary: Colors.black,
+  ),
+);
+
+final darktheme = ThemeData.from(
+    colorScheme: const ColorScheme.dark(
+  primary: mainColor,
+  onPrimary: Colors.white,
+));

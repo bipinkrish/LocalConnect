@@ -1,7 +1,7 @@
 name: localconnect
 description: A new Flutter project.
 publish_to: 'none' 
-version: 1.0.0+1
+version: 1.1.0+1
 
 environment:
   sdk: '>=3.1.0 <4.0.0'
@@ -23,6 +23,8 @@ dependencies:
   flutter_markdown: ^0.6.17+3
   flutter_colorpicker: ^1.0.3
   url_launcher: ^6.1.14
+  adaptive_theme: ^3.4.0
+  toggle_switch: ^2.1.0
 
   window_size:
     git:
