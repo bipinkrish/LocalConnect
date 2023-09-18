@@ -290,7 +290,9 @@ class _HomePageState extends State<HomePage> {
                         refresh();
                       },
                     ),
-                    Text(" on port $port"),
+                    const Text(" on port "),
+                    Text(port.toString(),
+                        style: const TextStyle(color: mainColor))
                   ],
                 ),
               ],

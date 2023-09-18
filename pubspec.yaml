@@ -13,9 +13,9 @@ dependencies:
   cupertino_icons: ^1.0.2
   # json_rpc_2: ^3.0.2
   # web_socket_channel: ^2.4.0
-
   # simple_peer: ^0.0.13
   # peerdart: ^0.5.3
+  
   network_discovery: ^1.0.0
   device_info_plus: ^9.0.3
   flutter_riverpod: ^2.4.0
@@ -37,19 +37,19 @@ dev_dependencies:
     sdk: flutter
 
   flutter_lints: ^2.0.0
-  # flutter_launcher_icons: ^0.13.1
+  flutter_launcher_icons: ^0.13.1
   # change_app_package_name: ^1.1.0
   # rename_app: ^1.1.0
   # flutter_app_name: ^0.1.1
   # rename: ^2.1.1
+  msix: ^3.16.2
 
 flutter:
-
   uses-material-design: true
 
-  # assets:
-  #   - assets/logo.png
-  #   - assets/logo-mob.png
+  assets:
+    - assets/logo.png
+    - assets/logo-mob.png
 
   # fonts:
   #   - family: Schyler
@@ -63,8 +63,8 @@ flutter:
   #       - asset: fonts/TrajanPro_Bold.ttf
   #         weight: 700
 
-flutter_app_name:
-  name: "Local Connect"
+# flutter_app_name:
+#   name: "Local Connect"
 
 flutter_launcher_icons:
   android: "launcher_icon"
@@ -81,3 +81,17 @@ flutter_launcher_icons:
   macos:
     generate: true
     image_path: "assets/logo.png"
+
+msix_config:
+  display_name: LocalConnect
+  publisher_display_name: Bipin
+  publisher: Bipin
+  identity_name: com.bipin.localconnect
+  logo_path: assets/logo.png
+  os_min_version: 10.0.19041.0
+  install_certificate: false
+  sign_msix: false
+  startup_task:
+    task_id: localconnect
+    enabled: false
+    parameters: autostart

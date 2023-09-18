@@ -5,7 +5,7 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>$(DEVELOPMENT_LANGUAGE)</string>
     <key>CFBundleDisplayName</key>
-	<string>LocalConnect</string>
+    <string>LocalConnect</string>
     <key>CFBundleExecutable</key>
     <string>$(EXECUTABLE_NAME)</string>
     <key>CFBundleIdentifier</key>
@@ -13,7 +13,7 @@
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
-	<string>LocalConnect</string>
+    <string>LocalConnect</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
@@ -41,9 +41,31 @@
       <string>UIInterfaceOrientationLandscapeLeft</string>
       <string>UIInterfaceOrientationLandscapeRight</string>
     </array>
+    <key>UIViewControllerBasedStatusBarAppearance</key>
+    <false />
     <key>CADisableMinimumFrameDurationOnPhone</key>
     <true/>
     <key>UIApplicationSupportsIndirectInputEvents</key>
     <true/>
+
+    <!-- Flag to skip question by Appstore -->
+    <key>ITSAppUsesNonExemptEncryption</key>
+    <false />
+
+    <!-- Make downloaded files visible to the user -->
+    <key>UISupportsDocumentBrowser</key>
+    <true />
+
+    <!-- Permissions -->
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>The app needs photo library access so that the user can select photos to share.</string>
+    <key>NSPhotoLibraryAddUsageDescription</key>
+    <string>The app saves received media to the photo library.</string>
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>The app requires the local IP to communicate.</string>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>The app requires the local IP to communicate.</string>
+    <key>NSLocalNetworkUsageDescription</key>
+    <string>The app uses the local network to find and connect to nearby devices.</string>
   </dict>
 </plist>
