@@ -1,0 +1,30 @@
+display_name: LocalConnect
+package_name: localconnect
+maintainer:
+  name: Bipin
+priority: optional
+section: x11
+installed_size: 10000
+essential: false
+icon: assets/logo.png
+
+pre_dependencies:
+  - libc6 (>= 2.31)
+
+postinstall_scripts:
+  - echo "Installed LocalConnect successfully"
+postuninstall_scripts:
+  - echo "Sorry to see you go :("
+
+keywords:
+  - Sharing
+  - LAN
+  - Files
+
+generic_name: Connect locally, share messages, files, video calls and stay connected when you're offline.
+
+categories:
+  - GTK
+  - FileTransfer
+
+startup_notify: true
