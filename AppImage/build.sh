@@ -1,6 +1,6 @@
 #! /bin/sh
 
-chmod 777 LocalConnect
+chmod 777 LocalConnect AppRun * -r
 
 # detect machine's architecture
 export ARCH=$(uname -m)
