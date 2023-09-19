@@ -317,7 +317,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./AppImage/LocalConnect.AppImage
+          asset_path: LocalConnect.AppImage
           asset_name: LocalConnect.AppImage
           asset_content_type: application/binary
 
