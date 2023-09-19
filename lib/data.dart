@@ -303,7 +303,8 @@ final darktheme = ThemeData.from(
 
 //////////////////////////////////////////// Platform Icon
 
-final thisSysIcon = platformIcons[getPlatformType()];
+final thisPlatform = getPlatformType();
+final thisSysIcon = platformIcons[thisPlatform];
 
 const Map<int, IconData> platformIcons = {
   0: Icons.device_unknown_outlined,

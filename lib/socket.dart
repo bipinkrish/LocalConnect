@@ -24,7 +24,7 @@ Future<bool> startServerSocket(
 
       if (parts[0] == 'GET_METADATA') {
         final deviceName = await getDeviceName();
-        clientSocket.write("$deviceName$seperator${getPlatformType()}");
+        clientSocket.write("$deviceName$seperator${thisPlatform}");
         clientSocket.close();
       }
 
@@ -68,7 +68,7 @@ void askMetadataRequest(String ipAddress, int port, Function setstate) {
 void askAccept(String rec, int port, String device, Function setAccAns) {
   Socket.connect(rec, port).then((clientSocket) {
     String askRequest =
-        'ASK_ACCEPT$seperator$device$seperator${getPlatformType()}';
+        'ASK_ACCEPT$seperator$device$seperator${thisPlatform}';
     clientSocket.add(Uint8List.fromList(utf8.encode(askRequest)));
 
     clientSocket.listen((Uint8List data) {

@@ -143,7 +143,7 @@ class _HomePageState extends State<HomePage> {
       MaterialPageRoute(
         builder: (context) {
           return ChatScreen(
-            me: DiscoveredDevice(localIP, localName, getPlatformType()),
+            me: DiscoveredDevice(localIP, localName, thisPlatform),
             peer: accpeer,
             port: port,
           );
