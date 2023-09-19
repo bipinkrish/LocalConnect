@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 ////////////////////////////////////////////////////////////// Constants
 
-const String version = "v1.2.0";
+const String version = "v1.2.1";
 const String copyright = "© 2023 Bipin";
 const Color mainColor = Colors.deepOrange;
 

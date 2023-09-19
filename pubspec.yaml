@@ -1,7 +1,7 @@
 name: localconnect
 description: A new Flutter project.
 publish_to: 'none' 
-version: 1.2.0+2
+version: 1.2.1+2
 
 environment:
   sdk: '>=3.1.0 <4.0.0'
@@ -104,5 +104,5 @@ flutter_native_splash:
   image: "assets/logo.png"
 
   android_12:
-    image: "assets/logo.png"
+    image: "assets/logo-mob.png"
     icon_background_color: "#FF5722"
