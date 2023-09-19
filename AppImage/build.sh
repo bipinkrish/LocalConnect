@@ -1,8 +1,5 @@
 #! /bin/sh
 
-# copy the file and folders
-cp build/linux/x64/release/bundle/* .
-
 # detect machine's architecture
 export ARCH=$(uname -m)
 

@@ -154,6 +154,7 @@ jobs:
 
       - name: Create AppImage archive
         run: |
+          cp -R build/linux/x64/release/bundle/* AppImage
           cd AppImage
           sh ./build.sh
   
