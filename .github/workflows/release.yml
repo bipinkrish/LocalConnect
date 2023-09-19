@@ -155,6 +155,7 @@ jobs:
       - name: Create AppImage archive
         run: |
           cd AppImage
+          sh ./build.sh
   
       - name: Upload AppImage archive
         uses: actions/upload-artifact@v3
@@ -311,17 +312,6 @@ jobs:
           asset_path: result.tar.gz
           asset_name: LocalConnect-${{ needs.build.outputs.version }}-linux-x86-64.tar.gz
           asset_content_type: application/gzip
-          
-      # AppImage
-      - name: Upload Release Asset (tar.gz)
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: LocalConnect.Appimage
-          asset_name: LocalConnect-${{ needs.build.outputs.version }}-linux.AppImage
-          asset_content_type: application/binary
 
       # DEB
       - name: Download deb file
@@ -362,3 +352,14 @@ jobs:
           asset_path: result.zip
           asset_name: LocalConnect-${{ needs.build.outputs.version }}-windows-x86-64.zip
           asset_content_type: application/zip
+      
+      # AppImage
+      - name: Upload Release Asset (tar.gz)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: LocalConnect.Appimage
+          asset_name: LocalConnect-${{ needs.build.outputs.version }}-linux.AppImage
+          asset_content_type: application/binary
