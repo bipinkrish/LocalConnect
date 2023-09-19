@@ -196,29 +196,29 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  InkWell getListBox(DiscoveredDevice device, {bool plus = false}) {
+  Container getListBox(DiscoveredDevice device, {bool plus = false}) {
     const int pad = 16;
 
-    return InkWell(
-      onTap: () {
-        if (plus) {
-          showIpAddressDialog();
-        } else {
-          showChatRequestPopup(device);
-        }
-      },
-      child: Container(
-        height: 100,
-        width: (MediaQuery.of(context).size.width / 2) - (pad * 2),
-        margin: EdgeInsets.all(pad.toDouble()),
-        decoration: BoxDecoration(
-          color: plus
-              ? Theme.of(context).brightness == Brightness.light
-                  ? Colors.brown.shade50
-                  : Colors.black26
-              : mainColor,
-          borderRadius: BorderRadius.circular(10),
-        ),
+    return Container(
+      height: 100,
+      width: (MediaQuery.of(context).size.width / 2) - (pad * 2),
+      margin: EdgeInsets.all(pad.toDouble()),
+      decoration: BoxDecoration(
+        color: plus
+            ? Theme.of(context).brightness == Brightness.light
+                ? Colors.brown.shade50
+                : Colors.black54
+            : mainColor,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: InkWell(
+        onTap: () {
+          if (plus) {
+            showIpAddressDialog();
+          } else {
+            showChatRequestPopup(device);
+          }
+        },
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: plus
@@ -312,21 +312,25 @@ class _HomePageState extends State<HomePage> {
                           else
                             getListBox(asking, plus: true)
                         ],
-                      )
-                  else
+                      ),
+                  if (deviceList.length % 2 == 0)
                     Row(
                       children: [
                         getListBox(asking, plus: true),
                       ],
                     ),
-                  if (deviceList.isEmpty)
-                    const Padding(
+
+                  // help msg
+                  Visibility(
+                    visible: deviceList.isEmpty,
+                    child: const Padding(
                       padding: EdgeInsets.all(50),
                       child: Text(
                         "No devices found, both parties should be on the same network\nMake sure the IP addresses should match upto 2 dots",
                         textAlign: TextAlign.center,
                       ),
                     ),
+                  ),
                 ],
               ),
             ),
@@ -345,7 +349,7 @@ class _HomePageState extends State<HomePage> {
           decoration: BoxDecoration(
             color: Theme.of(context).brightness == Brightness.light
                 ? Colors.brown.shade50
-                : Colors.black26,
+                : Colors.black,
             borderRadius: BorderRadius.circular(10),
           ),
           child: Row(
@@ -578,12 +582,22 @@ class _HomePageState extends State<HomePage> {
     final FocusNode ip3Focus = FocusNode();
     final FocusNode ip4Focus = FocusNode();
 
-    void changeFocusIfNeeded(
-      String value,
-    ) {
-      if (value.length == 3) {
+    void changeFocusIfNeeded(String value, {bool entered = false}) {
+      if (value.length == 3 || entered) {
         ip3Focus.unfocus();
         ip4Focus.requestFocus();
+      }
+    }
+
+    void clickediscover() {
+      Navigator.of(context).pop();
+      isAvailable = true;
+      String enteredIpAddress =
+          "${ipAddress[0]}.${ipAddress[1]}.${ip3.text}.${ip4.text}";
+      if (isValidIPAddress(enteredIpAddress)) {
+        discoverAddr(enteredIpAddress);
+      } else {
+        showSnack("Not a Valid IP Address");
       }
     }
 
@@ -619,6 +633,8 @@ class _HomePageState extends State<HomePage> {
                       onChanged: (value) {
                         changeFocusIfNeeded(value);
                       },
+                      onSubmitted: (value) =>
+                          changeFocusIfNeeded(value, entered: true),
                     ),
                   ),
                   const Text(" . ", style: textstyle),
@@ -634,6 +650,7 @@ class _HomePageState extends State<HomePage> {
                         LengthLimitingTextInputFormatter(3),
                         FilteringTextInputFormatter.digitsOnly
                       ],
+                      onSubmitted: (value) => clickediscover(),
                     ),
                   ),
                 ],
@@ -653,17 +670,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                   ElevatedButton(
                     child: const Text("Discover"),
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      isAvailable = true;
-                      String enteredIpAddress =
-                          "${ipAddress[0]}.${ipAddress[1]}.${ip3.text}.${ip4.text}";
-                      if (isValidIPAddress(enteredIpAddress)) {
-                        discoverAddr(enteredIpAddress);
-                      } else {
-                        showSnack("Not a Valid IP Address");
-                      }
-                    },
+                    onPressed: () => clickediscover(),
                   ),
                 ],
               ),

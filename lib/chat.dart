@@ -136,7 +136,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       decoration: InputDecoration(
                         hintText: 'Enter your message...',
                         filled: true,
-                        fillColor: Colors.black26,
+                        fillColor: Colors.black54,
                         contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 12),
                         border: OutlineInputBorder(

@@ -14,8 +14,8 @@ Future<bool> startServerSocket(
     BuildContext context,
     Function accCallback,
     Function cancelCallback) async {
-      final chatMessagesNotifier =
-            providerContainer.read(chatMessagesProvider.notifier);
+  final chatMessagesNotifier =
+      providerContainer.read(chatMessagesProvider.notifier);
   serverSocket = await ServerSocket.bind(localIP, port, shared: true);
 
   serverSocket.listen((Socket clientSocket) {
@@ -29,11 +29,8 @@ Future<bool> startServerSocket(
       }
 
       if (parts[0] == 'ASK_ACCEPT') {
-        accCallback(
-          clientSocket,
-          parts[1],
-          int.parse(parts[2])
-        );
+        final int pltType = int.tryParse(parts[2]) ?? 0;
+        accCallback(clientSocket, parts[1], pltType);
       }
 
       if (parts[0] == 'CANCEL') {
@@ -70,7 +67,8 @@ void askMetadataRequest(String ipAddress, int port, Function setstate) {
 // ask accept
 void askAccept(String rec, int port, String device, Function setAccAns) {
   Socket.connect(rec, port).then((clientSocket) {
-    String askRequest = 'ASK_ACCEPT$seperator$device$seperator${getPlatformType()}';
+    String askRequest =
+        'ASK_ACCEPT$seperator$device$seperator${getPlatformType()}';
     clientSocket.add(Uint8List.fromList(utf8.encode(askRequest)));
 
     clientSocket.listen((Uint8List data) {

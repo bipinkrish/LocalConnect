@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 ////////////////////////////////////////////////////////////// Constants
 
-const String version = "v1.2.1";
+const String version = "v1.2.5";
 const String copyright = "© 2023 Bipin";
 const Color mainColor = Colors.deepOrange;
 
@@ -217,10 +217,8 @@ Row getrow(String name, String value) {
     children: [
       Text("$name "),
       Text(
-        value,
+        value.length <= 20 ? value : '${value.substring(0, 20)}...',
         style: const TextStyle(color: mainColor),
-        overflow: TextOverflow.ellipsis,
-        maxLines: 1,
       )
     ],
   );
@@ -299,7 +297,7 @@ final darktheme = ThemeData.from(
   colorScheme: const ColorScheme.dark(
     primary: mainColor,
     onPrimary: Colors.white,
-    secondaryContainer: Colors.black26,
+    secondaryContainer: Colors.black54,
   ),
 );
 
@@ -310,9 +308,9 @@ final thisSysIcon = platformIcons[getPlatformType()];
 const Map<int, IconData> platformIcons = {
   0: Icons.device_unknown_outlined,
   1: Icons.android_outlined,
-  2: Icons.phone_iphone_outlined,
+  2: Custom.iphone,
   3: Icons.window,
-  4: Icons.terminal_outlined,
+  4: Custom.linux,
   5: Icons.desktop_mac
 };
 
@@ -334,4 +332,18 @@ int getPlatformType() {
   } else {
     return 0;
   }
+}
+
+///////////////////////////////////////////////// Custom
+
+class Custom {
+  Custom._();
+
+  static const _kFontFam = 'Custom';
+  static const String? _kFontPkg = null;
+
+  static const IconData iphone =
+      IconData(0xf034, fontFamily: _kFontFam, fontPackage: _kFontPkg);
+  static const IconData linux =
+      IconData(0xf17c, fontFamily: _kFontFam, fontPackage: _kFontPkg);
 }

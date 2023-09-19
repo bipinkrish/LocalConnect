@@ -137,7 +137,7 @@ class _SettingsState extends State<Settings> {
         decoration: BoxDecoration(
           color: Theme.of(context).brightness == Brightness.light
               ? Colors.brown.shade50
-              : Colors.black26,
+              : Colors.black54,
           borderRadius: BorderRadius.circular(10),
         ),
         child: Column(
