@@ -218,7 +218,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                             onTapLink: (text, href, title) async {
                               final url = Uri.parse(href!);
                               if (await canLaunchUrl(url)) {
-                                await launchUrl(url);
+                                launchUrl(url);
                               }
                             },
                             data: message.text,

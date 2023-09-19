@@ -6,6 +6,7 @@ import 'package:localconnect/data.dart';
 import 'package:localconnect/setting.dart';
 import 'package:localconnect/socket.dart';
 import 'package:network_discovery/network_discovery.dart';
+import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
 import 'package:window_size/window_size.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
@@ -14,7 +15,7 @@ void main() {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   if (Platform.isWindows || Platform.isLinux || Platform.isWindows) {
-    setWindowTitle("Local Connect");
+    setWindowTitle("LocalConnect");
   }
   runApp(
     AdaptiveTheme(
@@ -22,7 +23,7 @@ void main() {
       dark: darktheme,
       initial: AdaptiveThemeMode.system,
       builder: (theme, darkTheme) => MaterialApp(
-        title: "Local Connect",
+        title: "LocalConnect",
         theme: theme,
         darkTheme: darkTheme,
         home: const HomePage(),
@@ -42,10 +43,9 @@ class _HomePageState extends State<HomePage> {
   bool isAccepted = false;
   bool isRequesting = false;
   bool isAvailable = true;
-  bool infoTab = true;
 
   late DiscoveredDevice peer;
-  DiscoveredDevice asking = DiscoveredDevice("", "");
+  DiscoveredDevice asking = DiscoveredDevice("", "", 0);
   Set<DiscoveredDevice> discoveredDevices = {};
   List<DiscoveredNetwork> discoveredNetwork = [];
 
@@ -53,6 +53,7 @@ class _HomePageState extends State<HomePage> {
   int port = 4321;
   String localIP = "";
   String localName = "";
+  int _currentIndex = 0;
 
   @override
   void dispose() {
@@ -95,9 +96,9 @@ class _HomePageState extends State<HomePage> {
   }
 
   // new device's metadata received
-  void setDisState(String ipAddress, String response) {
-    discoveredDevices.add(DiscoveredDevice(ipAddress, response));
-    showSnack("Discovered $response");
+  void setDisState(String ipAddress, String name, int type) {
+    discoveredDevices.add(DiscoveredDevice(ipAddress, name, type));
+    showSnack("Discovered $name");
     refresh();
   }
 
@@ -142,7 +143,7 @@ class _HomePageState extends State<HomePage> {
       MaterialPageRoute(
         builder: (context) {
           return ChatScreen(
-            me: DiscoveredDevice(localIP, localName),
+            me: DiscoveredDevice(localIP, localName, getPlatformType()),
             peer: accpeer,
             port: port,
           );
@@ -155,7 +156,7 @@ class _HomePageState extends State<HomePage> {
 
   // show snackbar
   void showSnack(String content) {
-    ScaffoldMessenger.of(context).showSnackBar(snackbar(content));
+    ScaffoldMessenger.of(context).showSnackBar(snackbar(content, context));
   }
 
   // discover devices on network
@@ -195,37 +196,49 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  InkWell getListBox(DiscoveredDevice device) {
+  InkWell getListBox(DiscoveredDevice device, {bool plus = false}) {
     const int pad = 16;
 
     return InkWell(
       onTap: () {
-        showChatRequestPopup(device);
+        if (plus) {
+          showIpAddressDialog();
+        } else {
+          showChatRequestPopup(device);
+        }
       },
       child: Container(
         height: 100,
         width: (MediaQuery.of(context).size.width / 2) - (pad * 2),
         margin: EdgeInsets.all(pad.toDouble()),
         decoration: BoxDecoration(
-          color: mainColor,
+          color: plus
+              ? Theme.of(context).brightness == Brightness.light
+                  ? Colors.brown.shade50
+                  : Colors.black26
+              : mainColor,
           borderRadius: BorderRadius.circular(10),
         ),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Text(
-                device.deviceName,
-                style: const TextStyle(fontWeight: FontWeight.bold),
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
-              ),
-            ),
-            Text(
-              device.ip,
-            ),
-          ],
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: plus
+              ? const [
+                  Icon(
+                    Icons.add,
+                    color: mainColor,
+                  )
+                ]
+              : [
+                  Icon(platformIcons[device.type]),
+                  Text(
+                    device.deviceName,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                  Text(
+                    device.ip,
+                  ),
+                ],
         ),
       ),
     );
@@ -236,163 +249,179 @@ class _HomePageState extends State<HomePage> {
     final deviceList = discoveredDevices.toList();
 
     return Scaffold(
-      body: Column(
-        children: [
-          // actions
-          const SizedBox(
-            height: 60,
+      floatingActionButton: _currentIndex == 0
+          ? FloatingActionButton(
+              onPressed: () {
+                startDeviceDiscovery(tapped: true);
+              },
+              child: const Icon(
+                Icons.refresh_outlined,
+              ),
+            )
+          : null,
+      bottomNavigationBar: SalomonBottomBar(
+        currentIndex: _currentIndex,
+        onTap: (i) {
+          if (i == 0 && _currentIndex == 1) {
+            isAvailable = true;
+            initiateLocalName();
+          }
+          if (i == 1 && _currentIndex == 0) {
+            isAvailable = false;
+          }
+
+          _currentIndex = i;
+          refresh();
+        },
+        items: [
+          SalomonBottomBarItem(
+            icon: const Icon(Icons.home),
+            title: const Text("Home"),
+            selectedColor: mainColor,
           ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              IconButton(
-                onPressed: () {
-                  infoTab = !infoTab;
-                  refresh();
-                },
-                icon: infoTab
-                    ? const Icon(Icons.keyboard_arrow_down_outlined)
-                    : const Icon(Icons.keyboard_arrow_up_outlined),
-              ),
-              IconButton(
-                onPressed: () {
-                  showIpAddressDialog();
-                },
-                icon: const Icon(
-                  Icons.add,
-                ),
-              ),
-              IconButton(
-                onPressed: () {
-                  startDeviceDiscovery(tapped: true);
-                },
-                icon: const Icon(
-                  Icons.refresh_outlined,
-                ),
-              ),
-              IconButton(
-                onPressed: () async {
-                  isAvailable = false;
-                  await Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) {
-                        return Settings(
-                          initialDeviceName: localName,
-                        );
-                      },
+          SalomonBottomBarItem(
+            icon: const Icon(Icons.settings_outlined),
+            title: const Text("Settings"),
+            selectedColor: mainColor,
+          ),
+        ],
+      ),
+      body: _currentIndex == 1
+          ? Settings(
+              initialDeviceName: localName,
+            )
+          : SingleChildScrollView(
+              child: Column(
+                children: [
+                  // actions
+                  const SizedBox(
+                    height: 60,
+                  ),
+
+                  // you box
+                  getYouBox(),
+
+                  // discovered
+                  if (deviceList.isNotEmpty)
+                    for (int i = 0; i < deviceList.length; i = i + 2)
+                      Row(
+                        children: [
+                          if (i < deviceList.length) getListBox(deviceList[i]),
+                          if (i + 1 < deviceList.length)
+                            getListBox(deviceList[i + 1])
+                          else
+                            getListBox(asking, plus: true)
+                        ],
+                      )
+                  else
+                    Row(
+                      children: [
+                        getListBox(asking, plus: true),
+                      ],
                     ),
-                  );
-                  if (!mounted) return;
-                  isAvailable = true;
-                  initiateLocalName();
-                },
-                icon: const Icon(Icons.settings_outlined),
+                  if (deviceList.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.all(50),
+                      child: Text(
+                        "No devices found, both parties should be on the same network\nMake sure the IP addresses should match upto 2 dots",
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+    );
+  }
+
+  // you box
+  Visibility getYouBox() {
+    return Visibility(
+      visible: (localName.isNotEmpty && localIP.isNotEmpty),
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Container(
+          padding: const EdgeInsets.all(15),
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: Theme.of(context).brightness == Brightness.light
+                ? Colors.brown.shade50
+                : Colors.black26,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(
+            children: [
+              Flexible(
+                flex: 1,
+                child: Center(
+                  child: Icon(thisSysIcon),
+                ),
+              ),
+              Flexible(
+                flex: 9,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        getrow("Device", localName),
+                        getrow("IP", localIP),
+                      ],
+                    ),
+                    const SizedBox(
+                      height: 10,
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        getrow("Port", port.toString()),
+                        Row(
+                          children: [
+                            const Text("Interface "),
+                            DropdownButton(
+                              style: const TextStyle(color: mainColor),
+                              value: localIP,
+                              borderRadius: BorderRadius.circular(8),
+                              items: [
+                                for (DiscoveredNetwork network
+                                    in discoveredNetwork)
+                                  DropdownMenuItem(
+                                    value: network.addr,
+                                    child: Text(
+                                      network.name,
+                                      style: TextStyle(
+                                        color: localIP == network.addr
+                                            ? mainColor
+                                            : Theme.of(context).brightness ==
+                                                    Brightness.light
+                                                ? Colors.black
+                                                : Colors.white,
+                                      ),
+                                    ),
+                                  )
+                              ],
+                              onChanged: (value) {
+                                localIP = value!;
+                                startDeviceDiscovery(tapped: true);
+                                refresh();
+                              },
+                            ),
+                          ],
+                        ),
+                      ],
+                    )
+                  ],
+                ),
               ),
             ],
           ),
-
-          // you box
-          Visibility(
-            visible: (infoTab && localName.isNotEmpty && localIP.isNotEmpty),
-            child: Column(
-              children: [
-                const SizedBox(
-                  height: 10,
-                ),
-                //first line
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(localName, style: const TextStyle(color: mainColor)),
-                    const Text(" is available at "),
-                    Text(localIP, style: const TextStyle(color: mainColor)),
-                  ],
-                ),
-
-                // second line
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      "with interface ",
-                    ),
-                    DropdownButton(
-                      style: const TextStyle(color: mainColor),
-                      value: localIP,
-                      items: [
-                        for (DiscoveredNetwork network in discoveredNetwork)
-                          DropdownMenuItem(
-                            value: network.addr,
-                            child: Text(
-                              network.name,
-                              style: TextStyle(
-                                color: localIP == network.addr
-                                    ? mainColor
-                                    : Theme.of(context).brightness ==
-                                            Brightness.light
-                                        ? Colors.black
-                                        : Colors.white,
-                              ),
-                            ),
-                          )
-                      ],
-                      onChanged: (value) {
-                        localIP = value!;
-                        startDeviceDiscovery(tapped: true);
-                        refresh();
-                      },
-                    ),
-                    const Text(" on port "),
-                    Text(port.toString(),
-                        style: const TextStyle(color: mainColor))
-                  ],
-                ),
-                const Divider(
-                  height: 5,
-                  thickness: 1,
-                  color: mainColor,
-                ),
-              ],
-            ),
-          ),
-
-          for (int i = 0; i < deviceList.length; i = i + 2)
-            Row(
-              children: [
-                if (i < deviceList.length) getListBox(deviceList[i]),
-                if (i + 1 < deviceList.length) getListBox(deviceList[i + 1]),
-              ],
-            )
-
-          // Display discovered devices
-          // Flexible(
-          //   child: ListView.builder(
-          //     itemCount: deviceList.length,
-          //     itemBuilder: (context, index) {
-          //       final device = deviceList[index];
-          //       return ListTile(
-          //         title: Text(device.deviceName),
-          //         subtitle: Text(device.ip),
-          //         trailing: ElevatedButton(
-          //           onPressed: () {
-          //             showChatRequestPopup(device);
-          //           },
-          //           child: const Text("Connect"),
-          //         ),
-          //       );
-          //     },
-          //   ),
-          // ),
-        ],
+        ),
       ),
     );
   }
 
   // some one is asking
-  void getAcceptAns(
-    Socket client,
-    String device,
-  ) {
+  void getAcceptAns(Socket client, String device, int type) {
     if (!isAvailable) {
       client.write("BUSY");
       client.close();
@@ -400,7 +429,8 @@ class _HomePageState extends State<HomePage> {
     }
 
     isAvailable = false;
-    asking = DiscoveredDevice(client.remoteAddress.address.toString(), device);
+    asking =
+        DiscoveredDevice(client.remoteAddress.address.toString(), device, type);
 
     showModalBottomSheet(
       isDismissible: false,
@@ -466,20 +496,8 @@ class _HomePageState extends State<HomePage> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: !isRequesting
                   ? [
-                      RichText(
-                        text: TextSpan(
-                          children: <TextSpan>[
-                            const TextSpan(
-                                text: "Do you want to start a chat with "),
-                            TextSpan(
-                              text: receiver.deviceName,
-                              style: const TextStyle(color: mainColor),
-                            ),
-                          ],
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
+                      getrow("Do you want to start a chat with",
+                          receiver.deviceName),
                       const SizedBox(
                         height: 20,
                       ),
@@ -511,20 +529,8 @@ class _HomePageState extends State<HomePage> {
                       )
                     ]
                   : [
-                      RichText(
-                        text: TextSpan(
-                          children: <TextSpan>[
-                            const TextSpan(text: "Waiting for "),
-                            TextSpan(
-                              text: receiver.deviceName,
-                              style: const TextStyle(color: mainColor),
-                            ),
-                            const TextSpan(text: " to accept"),
-                          ],
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
+                      getrow(
+                          "Waiting for acceptance from", receiver.deviceName),
                       const SizedBox(
                         height: 20,
                       ),

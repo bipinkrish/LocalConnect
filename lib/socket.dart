@@ -24,7 +24,7 @@ Future<bool> startServerSocket(
 
       if (parts[0] == 'GET_METADATA') {
         final deviceName = await getDeviceName();
-        clientSocket.write(deviceName);
+        clientSocket.write("$deviceName$seperator${getPlatformType()}");
         clientSocket.close();
       }
 
@@ -32,6 +32,7 @@ Future<bool> startServerSocket(
         accCallback(
           clientSocket,
           parts[1],
+          int.parse(parts[2])
         );
       }
 
@@ -57,9 +58,9 @@ void askMetadataRequest(String ipAddress, int port, Function setstate) {
     clientSocket.add(Uint8List.fromList(utf8.encode(metadataRequest)));
 
     clientSocket.listen((Uint8List data) {
-      final response = String.fromCharCodes(data);
+      final response = String.fromCharCodes(data).split(seperator);
       clientSocket.close();
-      setstate(ipAddress, response);
+      setstate(ipAddress, response[0], int.parse(response[1]));
     }, onDone: () {}, onError: (error) {});
   }).catchError((error) {
     debugPrint('Connection error: $error');
@@ -69,7 +70,7 @@ void askMetadataRequest(String ipAddress, int port, Function setstate) {
 // ask accept
 void askAccept(String rec, int port, String device, Function setAccAns) {
   Socket.connect(rec, port).then((clientSocket) {
-    String askRequest = 'ASK_ACCEPT$seperator$device';
+    String askRequest = 'ASK_ACCEPT$seperator$device$seperator${getPlatformType()}';
     clientSocket.add(Uint8List.fromList(utf8.encode(askRequest)));
 
     clientSocket.listen((Uint8List data) {

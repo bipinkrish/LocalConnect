@@ -6,6 +6,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 ////////////////////////////////////////////////////////////// Constants
 
+const String version = "v1.2.0";
+const String copyright = "© 2023 Bipin";
 const Color mainColor = Colors.deepOrange;
 
 const String deviceNameKey = "DeviceName";
@@ -26,8 +28,9 @@ const int defaultThemeMode = 2;
 class DiscoveredDevice {
   final String ip;
   final String deviceName;
+  final int type;
 
-  DiscoveredDevice(this.ip, this.deviceName);
+  DiscoveredDevice(this.ip, this.deviceName, this.type);
 
   @override
   bool operator ==(Object other) {
@@ -152,18 +155,22 @@ class ChatMessagesNotifier extends StateNotifier<List<Message>> {
 
 //////////////////////////////////////////////////// Common
 
-SnackBar snackbar(String content) {
+SnackBar snackbar(String content, BuildContext context) {
+  final darkmode = Theme.of(context).brightness == Brightness.dark;
   return SnackBar(
     duration: const Duration(milliseconds: 800),
-    backgroundColor: mainColor.withAlpha(40),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(50),
+    backgroundColor: darkmode ? mainColor.withAlpha(40) : Colors.brown.shade50,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.only(
+        topLeft: Radius.circular(40),
+        topRight: Radius.circular(40),
+      ),
     ),
     content: Center(
       child: Text(
         content,
-        style: const TextStyle(
-          color: Colors.white,
+        style: TextStyle(
+          color: darkmode ? Colors.white : Colors.black,
         ),
         overflow: TextOverflow.ellipsis,
         maxLines: 1,
@@ -201,6 +208,22 @@ bool isValidIPAddress(String input) {
   }
 
   return true;
+}
+
+// row of key value
+Row getrow(String name, String value) {
+  return Row(
+    mainAxisAlignment: MainAxisAlignment.center,
+    children: [
+      Text("$name "),
+      Text(
+        value,
+        style: const TextStyle(color: mainColor),
+        overflow: TextOverflow.ellipsis,
+        maxLines: 1,
+      )
+    ],
+  );
 }
 
 /////////////////////////////////////////////////// Shared Prefrences
@@ -279,3 +302,36 @@ final darktheme = ThemeData.from(
     secondaryContainer: Colors.black26,
   ),
 );
+
+//////////////////////////////////////////// Platform Icon
+
+final thisSysIcon = platformIcons[getPlatformType()];
+
+const Map<int, IconData> platformIcons = {
+  0: Icons.device_unknown_outlined,
+  1: Icons.android_outlined,
+  2: Icons.phone_iphone_outlined,
+  3: Icons.window,
+  4: Icons.terminal_outlined,
+  5: Icons.desktop_mac
+};
+
+int getPlatformType() {
+  if (Platform.isAndroid) {
+    return 1;
+  }
+  if (Platform.isIOS) {
+    return 2;
+  }
+  if (Platform.isWindows) {
+    return 3;
+  }
+  if (Platform.isLinux) {
+    return 4;
+  }
+  if (Platform.isMacOS) {
+    return 5;
+  } else {
+    return 0;
+  }
+}

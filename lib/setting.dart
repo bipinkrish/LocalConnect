@@ -6,6 +6,7 @@ import 'package:localconnect/data.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:toggle_switch/toggle_switch.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class Settings extends StatefulWidget {
   String initialDeviceName;
@@ -17,6 +18,7 @@ class Settings extends StatefulWidget {
 
 class _SettingsState extends State<Settings> {
   // device name
+  late String initialname;
   final FocusNode _deviceNameNode = FocusNode();
   late TextEditingController _deviceNameController;
   bool _deviceNameValid = false;
@@ -40,12 +42,12 @@ class _SettingsState extends State<Settings> {
 
   // initial device name
   void initailizeDevicename() {
-    _deviceNameController =
-        TextEditingController(text: widget.initialDeviceName);
+    initialname = widget.initialDeviceName;
+    _deviceNameController = TextEditingController(text: initialname);
     _deviceNameController.addListener(() {
       _deviceNameValid = _deviceNameController.text.isNotEmpty &&
           _deviceNameNode.hasFocus &&
-          (widget.initialDeviceName != _deviceNameController.text);
+          (initialname != _deviceNameController.text);
       refresh();
     });
   }
@@ -106,7 +108,7 @@ class _SettingsState extends State<Settings> {
 
   // shoing snal
   void showSnack(String content) {
-    ScaffoldMessenger.of(context).showSnackBar(snackbar(content));
+    ScaffoldMessenger.of(context).showSnackBar(snackbar(content, context));
   }
 
   // container for setting row
@@ -158,12 +160,12 @@ class _SettingsState extends State<Settings> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Settings"),
-      ),
       body: SingleChildScrollView(
         child: Column(
           children: [
+            const SizedBox(
+              height: 60,
+            ),
             getGroup(
               "General",
               [
@@ -183,7 +185,56 @@ class _SettingsState extends State<Settings> {
             getGroup("Advanced", [
               getPortSet(),
               getIpv6Set(),
-            ])
+            ]),
+
+            // about card
+            Padding(
+              padding: const EdgeInsets.all(10),
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: mainColor,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset(
+                      "assets/logo.png",
+                      height: 200,
+                    ),
+                    const Text(
+                      "LocalConnect",
+                      style: TextStyle(
+                          fontSize: 40,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white),
+                    ),
+                    const Text(
+                      "Version: $version",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    const Text(
+                      copyright,
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        launchUrl(Uri.parse(
+                            "https://github.com/bipinkrish/LocalConnect"));
+                      },
+                      child: const Text(
+                        "Source Code (GitHub)",
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                    const SizedBox(
+                      height: 30,
+                    ),
+                  ],
+                ),
+              ),
+            )
           ],
         ),
       ),
@@ -207,11 +258,11 @@ class _SettingsState extends State<Settings> {
           _deviceNameNode.unfocus();
           if (_deviceNameValid) {
             save(deviceNameKey, _deviceNameController.text);
-            widget.initialDeviceName = _deviceNameController.text;
+            initialname = _deviceNameController.text;
             _deviceNameValid = false;
             refresh();
             showSnack("Device Name Updated");
-          } else if (widget.initialDeviceName != _deviceNameController.text) {
+          } else if (initialname != _deviceNameController.text) {
             showSnack("Please Enter a Valid Name");
           }
         },
