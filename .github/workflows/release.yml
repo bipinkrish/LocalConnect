@@ -161,8 +161,8 @@ jobs:
       - name: Upload AppImage archive
         uses: actions/upload-artifact@v3
         with:
-          name: LocalConnect.Appimage
-          path: ./LocalConnect.Appimage
+          name: LocalConnect.AppImage
+          path: ./LocalConnect.AppImage
 
   build_deb:
     needs: build
@@ -361,6 +361,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: LocalConnect.Appimage
+          asset_path: LocalConnect.AppImage
           asset_name: LocalConnect-${{ needs.build.outputs.version }}-linux.AppImage
           asset_content_type: application/binary
