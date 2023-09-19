@@ -13,11 +13,9 @@ fi
 ../build/appimagetool-$ARCH.AppImage .
 
 mv *.AppImage LocalConnect.AppImage
+mv LocalConnect.AppImage ../
 
-cp LocalConnect.AppImage ../
-echo "AppImage created in "
-pwd
-echo "and copied to"
 cd ..
+echo "AppImage created in "
 pwd
 echo "Done."

@@ -355,12 +355,21 @@ jobs:
           asset_content_type: application/zip
       
       # AppImage
-      - name: Upload Release Asset (tar.gz)
+      - name: Download AppImage file
+        uses: actions/download-artifact@v3
+        with:
+          name: LocalConnect.AppImage
+          path: LocalConnect.AppImage
+
+      - name: Copy AppImage file to root
+        run: cp LocalConnect.AppImage/*.AppImage result.AppImage
+
+      - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: LocalConnect.AppImage
+          asset_path: result.AppImage
           asset_name: LocalConnect-${{ needs.build.outputs.version }}-linux.AppImage
           asset_content_type: application/binary
