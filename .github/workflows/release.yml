@@ -122,6 +122,44 @@ jobs:
         with:
           name: tar-gz-result
           path: ./*.tar.gz
+  build_appimage:
+    needs: build
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download generated files
+        uses: actions/download-artifact@v3
+        with:
+          name: lib-files
+          path: lib
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake libgtk-3-dev ninja-build libayatana-appindicator3-dev
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: "stable"
+
+      - name: Dependencies
+        run: flutter pub get
+
+      - name: Compile linux
+        run: flutter build linux
+
+      - name: Create tar.gz archive
+        run: |
+          cd AppImage
+  
+      - name: Upload tar.gz archive
+        uses: actions/upload-artifact@v3
+        with:
+          name: LocalConnect.Appimage
+          path: ./LocalConnect.Appimage
 
   build_deb:
     needs: build
@@ -213,7 +251,7 @@ jobs:
           path: LocalConnect.zip
 
   release:
-    needs: [build, build_apk, build_tar, build_deb, build_windows_zip]
+    needs: [build, build_apk, build_tar, build_deb, build_windows_zip,build_appimage]
     runs-on: ubuntu-20.04
 
     steps:
@@ -272,6 +310,16 @@ jobs:
           asset_path: result.tar.gz
           asset_name: LocalConnect-${{ needs.build.outputs.version }}-linux-x86-64.tar.gz
           asset_content_type: application/gzip
+      #AppImage
+      - name: Upload Release Asset (tar.gz)
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./AppImage/LocalConnect.AppImage
+          asset_name: LocalConnect.AppImage
+          asset_content_type: application/binary
 
       # DEB
       - name: Download deb file
