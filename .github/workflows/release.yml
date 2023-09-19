@@ -122,6 +122,49 @@ jobs:
         with:
           name: tar-gz-result
           path: ./*.tar.gz
+  build_appimage:
+    needs: build
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download generated files
+        uses: actions/download-artifact@v3
+        with:
+          name: lib-files
+          path: lib
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake libgtk-3-dev ninja-build libayatana-appindicator3-dev
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: "stable"
+
+      - name: Dependencies
+        run: flutter pub get
+
+      - name: Compile linux
+        run: flutter build linux
+
+      - name: Create tar.gz archive
+        run: |
+          cd build/linux/x64/release/bundle
+          echo "#\!/bin/sh\ncd \"\$(dirname \"\$0\")\"\nexec ./LocalConnect" >> AppRun
+          curl -L -o ../appimagetool-$ARCH.AppImage https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-$ARCH.AppImage
+          chmod a+x ../appimagetool-$ARCH.AppImage
+          ../appimagetool-$ARCH.AppImage $PWD
+          mv *.AppImage LocalConnect.AppImage
+            
+      - name: Upload tar.gz archive
+        uses: actions/upload-artifact@v3
+        with:
+          name: LocalConnect.AppImage
+          path: ./*.AppImage
 
   build_deb:
     needs: build
