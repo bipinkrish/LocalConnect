@@ -353,69 +353,43 @@ class _HomePageState extends State<HomePage> {
             borderRadius: BorderRadius.circular(10),
           ),
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              Flexible(
-                flex: 1,
-                child: Center(
-                  child: Icon(thisSysIcon),
-                ),
-              ),
-              Flexible(
-                flex: 9,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        getrow("Device", localName),
-                        getrow("IP", localIP),
-                      ],
-                    ),
-                    const SizedBox(
-                      height: 10,
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        getrow("Port", port.toString()),
-                        Row(
-                          children: [
-                            const Text("Interface "),
-                            DropdownButton(
-                              style: const TextStyle(color: mainColor),
-                              value: localIP,
-                              borderRadius: BorderRadius.circular(8),
-                              items: [
-                                for (DiscoveredNetwork network
-                                    in discoveredNetwork)
-                                  DropdownMenuItem(
-                                    value: network.addr,
-                                    child: Text(
-                                      network.name,
-                                      style: TextStyle(
-                                        color: localIP == network.addr
-                                            ? mainColor
-                                            : Theme.of(context).brightness ==
-                                                    Brightness.light
-                                                ? Colors.black
-                                                : Colors.white,
-                                      ),
-                                    ),
-                                  )
-                              ],
-                              onChanged: (value) {
-                                localIP = value!;
-                                startDeviceDiscovery(tapped: true);
-                                refresh();
-                              },
+              Icon(thisSysIcon),
+              getcol("Device", localName),
+              getcol("IP", localIP),
+              // getcol("Port", port.toString()),
+              Column(
+                children: [
+                  const Text("Interface "),
+                  DropdownButton(
+                    style: const TextStyle(color: mainColor),
+                    value: localIP,
+                    borderRadius: BorderRadius.circular(8),
+                    items: [
+                      for (DiscoveredNetwork network in discoveredNetwork)
+                        DropdownMenuItem(
+                          value: network.addr,
+                          child: Text(
+                            network.name,
+                            style: TextStyle(
+                              color: localIP == network.addr
+                                  ? mainColor
+                                  : Theme.of(context).brightness ==
+                                          Brightness.light
+                                      ? Colors.black
+                                      : Colors.white,
                             ),
-                          ],
-                        ),
-                      ],
-                    )
-                  ],
-                ),
+                          ),
+                        )
+                    ],
+                    onChanged: (value) {
+                      localIP = value!;
+                      startDeviceDiscovery(tapped: true);
+                      refresh();
+                    },
+                  ),
+                ],
               ),
             ],
           ),
@@ -447,7 +421,7 @@ class _HomePageState extends State<HomePage> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text("$device is requesting to chat with you"),
+                getrow("Chat request from", device),
                 const SizedBox(
                   height: 20,
                 ),

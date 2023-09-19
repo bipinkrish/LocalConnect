@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 ////////////////////////////////////////////////////////////// Constants
 
-const String version = "v1.2.5";
+const String version = "v1.2.7";
 const String copyright = "© 2023 Bipin";
 const Color mainColor = Colors.deepOrange;
 
@@ -223,6 +223,21 @@ Row getrow(String name, String value) {
     ],
   );
 }
+
+// col of key value
+Column getcol(String name, String value) {
+  return Column(
+    mainAxisAlignment: MainAxisAlignment.center,
+    children: [
+      Text("$name "),
+      Text(
+        value.length <= 20 ? value : '${value.substring(0, 20)}...',
+        style: const TextStyle(color: mainColor),
+      )
+    ],
+  );
+}
+
 
 /////////////////////////////////////////////////// Shared Prefrences
 
