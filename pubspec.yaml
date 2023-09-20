@@ -1,7 +1,7 @@
 name: localconnect
 description: A new Flutter project.
 publish_to: 'none' 
-version: 1.2.8+2
+version: 1.3.0+2
 
 environment:
   sdk: '>=3.1.0 <4.0.0'
@@ -27,6 +27,7 @@ dependencies:
   toggle_switch: ^2.1.0
   flutter_native_splash: ^2.3.2
   salomon_bottom_bar: ^3.3.2
+  # udp: ^5.0.3
 
   window_size:
     git:

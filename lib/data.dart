@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 ////////////////////////////////////////////////////////////// Constants
 
-const String version = "v1.2.8";
+const String version = "v1.3.0";
 const String copyright = "© 2023 Bipin";
 const Color mainColor = Colors.deepOrange;
 
@@ -18,8 +18,10 @@ const String themeKey = 'ThemeMode';
 
 const Color defaultmeColor = Colors.blue;
 const Color defaultyouColor = Colors.green;
-final String defaultMeColor =  "${defaultmeColor.alpha},${defaultmeColor.red},${defaultmeColor.green},${defaultmeColor.blue}";
-final String defaultYouColor = "${defaultyouColor.alpha},${defaultyouColor.red},${defaultyouColor.green},${defaultyouColor.blue}";
+final String defaultMeColor =
+    "${defaultmeColor.alpha},${defaultmeColor.red},${defaultmeColor.green},${defaultmeColor.blue}";
+final String defaultYouColor =
+    "${defaultyouColor.alpha},${defaultyouColor.red},${defaultyouColor.green},${defaultyouColor.blue}";
 const bool defaultMarkdown = false;
 const int defaultThemeMode = 2;
 
@@ -148,7 +150,7 @@ class ChatMessagesNotifier extends StateNotifier<List<Message>> {
   void addMessage(String message, bool you, {bool info = false}) {
     state = [
       ...state,
-      Message(message, you, formatTime(DateTime.now()), isInfo: info)
+      Message(message, you, formatDateTime(DateTime.now()), isInfo: info)
     ];
   }
 }
@@ -179,12 +181,37 @@ SnackBar snackbar(String content, BuildContext context) {
   );
 }
 
-String formatTime(DateTime time) {
-  String period = time.hour < 12 ? 'AM' : 'PM';
-  int formattedHour = time.hour % 12 == 0 ? 12 : time.hour % 12;
-  String hour = formattedHour.toString().padLeft(2, '0');
-  String minute = time.minute.toString().padLeft(2, '0');
-  return '$hour:$minute $period';
+String formatDateTime(DateTime dateTime) {
+  final String period = dateTime.hour < 12 ? 'AM' : 'PM';
+  final int formattedHour = dateTime.hour % 12 == 0 ? 12 : dateTime.hour % 12;
+  final String hour = formattedHour.toString().padLeft(2, '0');
+  final String minute = dateTime.minute.toString().padLeft(2, '0');
+  final String formattedTime = '$hour:$minute $period';
+
+  final String formattedDate =
+      '${_getDayOfWeek(dateTime.weekday)}, ${_getFormattedDate(dateTime)}';
+
+  return '$formattedTime, $formattedDate';
+}
+
+String _getDayOfWeek(int dayOfWeek) {
+  final List<String> daysOfWeek = [
+    'Sun',
+    'Mon',
+    'Tue',
+    'Wed',
+    'Thu',
+    'Fri',
+    'Sat'
+  ];
+  return daysOfWeek[dayOfWeek - 1];
+}
+
+String _getFormattedDate(DateTime dateTime) {
+  final String year = dateTime.year.toString();
+  final String month = dateTime.month.toString().padLeft(2, '0');
+  final String day = dateTime.day.toString().padLeft(2, '0');
+  return '$year-$month-$day';
 }
 
 // check valid ip
@@ -210,6 +237,8 @@ bool isValidIPAddress(String input) {
   return true;
 }
 
+int maxlen = 16;
+
 // row of key value
 Row getrow(String name, String value) {
   return Row(
@@ -217,7 +246,7 @@ Row getrow(String name, String value) {
     children: [
       Text("$name "),
       Text(
-        value.length <= 20 ? value : '${value.substring(0, 20)}...',
+        value.length <= maxlen ? value : '${value.substring(0, maxlen)}...',
         style: const TextStyle(color: mainColor),
       )
     ],
@@ -231,13 +260,12 @@ Column getcol(String name, String value) {
     children: [
       Text("$name "),
       Text(
-        value.length <= 20 ? value : '${value.substring(0, 20)}...',
+        value.length <= maxlen ? value : '${value.substring(0, maxlen)}...',
         style: const TextStyle(color: mainColor),
       )
     ],
   );
 }
-
 
 /////////////////////////////////////////////////// Shared Prefrences
 

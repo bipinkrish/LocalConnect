@@ -53,6 +53,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         refresh();
         _scrollToBottom();
       },
+      onError: (error, stackTrace) {
+        providerContainer.dispose();
+        debugPrint(error.toString());
+      },
     );
   }
 
@@ -93,13 +97,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _scrollController.dispose();
     _messageNode.unfocus();
     _messageNode.dispose();
+    providerContainer.dispose();
     super.dispose();
   }
 
   void _sendMessage(String message, {bool info = false}) {
     if (message.isNotEmpty) {
-      sendMessage(
-          widget.peer.ip, widget.port, message.trim(), info ? "1" : "0");
+      sendMessage(widget.peer.ip, widget.port, message.trim(), info);
       notifier.addMessage(message.trim(), true, info: info);
       _messageController.clear();
     } else if (isMobile) {
@@ -134,7 +138,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       autofocus: isComputer,
                       maxLines: null,
                       decoration: InputDecoration(
-                        hintText: 'Enter your message...',
+                        hintText: 'Send a message...',
                         filled: true,
                         fillColor: Colors.black54,
                         contentPadding: const EdgeInsets.symmetric(

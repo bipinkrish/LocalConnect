@@ -70,29 +70,22 @@ class _HomePageState extends State<HomePage> {
   }
 
   // initiate local ip
-  void initiateLocalIP() {
-    getLocalIP().then(
-      (value) {
-        discoveredNetwork = value;
-        if (discoveredNetwork.isNotEmpty) {
-          localIP = discoveredNetwork[0].addr;
-          startServerSocket(
-              serverSocket, localIP, port, context, getAcceptAns, cancelPopup);
-          startDeviceDiscovery();
-        }
-        refresh();
-      },
-    );
+  void initiateLocalIP() async {
+    discoveredNetwork = await getLocalIP();
+    if (discoveredNetwork.isNotEmpty) {
+      localIP = discoveredNetwork[0].addr;
+      // ignore: use_build_context_synchronously
+      startServerSocket(
+          serverSocket, localIP, port, context, getAcceptAns, cancelPopup);
+      startDeviceDiscovery();
+    }
+    refresh();
   }
 
   // inititale local device name
-  void initiateLocalName() {
-    getDeviceName().then((value) {
-      if (localName != value) {
-        localName = value;
-        refresh();
-      }
-    });
+  void initiateLocalName() async {
+    localName = await getDeviceName();
+    refresh();
   }
 
   // new device's metadata received
@@ -166,7 +159,7 @@ class _HomePageState extends State<HomePage> {
     if (localIP.isNotEmpty) {
       if (tapped) {
         serverSocket?.close();
-        await startServerSocket(
+        startServerSocket(
             serverSocket, localIP, port, context, getAcceptAns, cancelPopup);
         initiateLocalName();
       }
