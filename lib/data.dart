@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 ////////////////////////////////////////////////////////////// Constants
 
-const String version = "v1.2.7";
+const String version = "v1.2.8";
 const String copyright = "© 2023 Bipin";
 const Color mainColor = Colors.deepOrange;
 
@@ -18,8 +18,8 @@ const String themeKey = 'ThemeMode';
 
 const Color defaultmeColor = Colors.blue;
 const Color defaultyouColor = Colors.green;
-final String defaultMeColor = defaultmeColor.hashCode.toString();
-final String defaultYouColor = defaultyouColor.hashCode.toString();
+final String defaultMeColor =  "${defaultmeColor.alpha},${defaultmeColor.red},${defaultmeColor.green},${defaultmeColor.blue}";
+final String defaultYouColor = "${defaultyouColor.alpha},${defaultyouColor.red},${defaultyouColor.green},${defaultyouColor.blue}";
 const bool defaultMarkdown = false;
 const int defaultThemeMode = 2;
 

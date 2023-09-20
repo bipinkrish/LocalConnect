@@ -1,7 +1,7 @@
 name: localconnect
 description: A new Flutter project.
 publish_to: 'none' 
-version: 1.2.7+2
+version: 1.2.8+2
 
 environment:
   sdk: '>=3.1.0 <4.0.0'

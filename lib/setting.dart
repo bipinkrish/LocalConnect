@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import 'package:localconnect/data.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
@@ -243,6 +244,19 @@ class _SettingsState extends State<Settings> {
 
   // device name
   ListTile getNameSet() {
+    void pressed() {
+      _deviceNameNode.unfocus();
+      if (_deviceNameValid) {
+        save(deviceNameKey, _deviceNameController.text);
+        initialname = _deviceNameController.text;
+        _deviceNameValid = false;
+        refresh();
+        showSnack("Device Name Updated");
+      } else if (initialname != _deviceNameController.text) {
+        showSnack("Please Enter a Valid Name");
+      }
+    }
+
     return getCont(
       title: const Text(
         "Device Name",
@@ -251,21 +265,14 @@ class _SettingsState extends State<Settings> {
       subtitle: TextField(
         controller: _deviceNameController,
         focusNode: _deviceNameNode,
+        maxLines: 1,
+        maxLength: 16,
+        maxLengthEnforcement: MaxLengthEnforcement.truncateAfterCompositionEnds,
         onTapOutside: (event) => _deviceNameNode.unfocus(),
+        onSubmitted: (value) => pressed(),
       ),
       trailing: IconButton(
-        onPressed: () {
-          _deviceNameNode.unfocus();
-          if (_deviceNameValid) {
-            save(deviceNameKey, _deviceNameController.text);
-            initialname = _deviceNameController.text;
-            _deviceNameValid = false;
-            refresh();
-            showSnack("Device Name Updated");
-          } else if (initialname != _deviceNameController.text) {
-            showSnack("Please Enter a Valid Name");
-          }
-        },
+        onPressed: () => pressed(),
         icon: Icon(
           Icons.done_outline,
           color: !_deviceNameValid ? Colors.grey : mainColor,
