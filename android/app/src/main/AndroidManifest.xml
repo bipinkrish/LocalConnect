@@ -3,7 +3,9 @@
     <application android:label="LocalConnect"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon"
-        android:enableOnBackInvokedCallback="true">
+        android:enableOnBackInvokedCallback="true"
+        requestLegacyStorage="true"
+        requestLegacyExternalStorage="true">
 
         <activity android:name=".MainActivity"
             android:exported="true"

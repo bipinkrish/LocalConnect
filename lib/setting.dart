@@ -1,5 +1,6 @@
 // ignore_for_file: must_be_immutable
 
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
@@ -8,6 +9,7 @@ import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:toggle_switch/toggle_switch.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:file_picker/file_picker.dart';
 
 class Settings extends StatefulWidget {
   String initialDeviceName;
@@ -40,6 +42,27 @@ class _SettingsState extends State<Settings> {
 
   // theme
   int thememode = defaultThemeMode;
+
+  // destination
+  String destination = "LocalConnect";
+
+  // setting folder
+  Future<void> setDestinationFolder() async {
+    final String? path;
+    path = await FilePicker.platform.getDirectoryPath();
+    if (path != null) {
+      destination = path.replaceAll('\\', '/');
+      if (!destination.contains("LocalConnect")) {
+        destination += "/LocalConnect";
+      }
+      final destinationFolder = Directory(destination);
+      if (!await destinationFolder.exists()) {
+        await destinationFolder.create(recursive: true);
+      }
+      save(destKey, destination);
+      refresh();
+    }
+  }
 
   // initial device name
   void initailizeDevicename() {
@@ -78,6 +101,11 @@ class _SettingsState extends State<Settings> {
     refresh();
   }
 
+  void initialzeDestination() async {
+    destination = await getDestination();
+    refresh();
+  }
+
   @override
   void initState() {
     // device name
@@ -88,6 +116,8 @@ class _SettingsState extends State<Settings> {
     initializeMarkdown();
     //theme mode
     initializeThemeMode();
+    // destination
+    initialzeDestination();
 
     super.initState();
   }
@@ -177,6 +207,10 @@ class _SettingsState extends State<Settings> {
               ],
             ),
             getGroup(
+              "Receive",
+              [getDestSet()],
+            ),
+            getGroup(
               "Network",
               [
                 getNameSet(),
@@ -237,6 +271,35 @@ class _SettingsState extends State<Settings> {
               ),
             )
           ],
+        ),
+      ),
+    );
+  }
+
+  // destination
+  ListTile getDestSet() {
+    final TextEditingController destController =
+        TextEditingController(text: destination);
+    final FocusNode destNode = FocusNode();
+
+    return getCont(
+      title: const Text(
+        "Destination Folder",
+        style: TextStyle(color: mainColor),
+      ),
+      subtitle: TextField(
+        focusNode: destNode,
+        controller: destController,
+        readOnly: true,
+        onTapOutside: (event) => destNode.unfocus(),
+      ),
+      trailing: IconButton(
+        onPressed: () {
+          setDestinationFolder();
+        },
+        icon: const Icon(
+          Icons.folder_copy_outlined,
+          color: Colors.grey,
         ),
       ),
     );

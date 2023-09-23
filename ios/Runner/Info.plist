@@ -56,6 +56,10 @@
 		<!-- Permissions -->
 		<key>NSPhotoLibraryUsageDescription</key>
 		<string>The app needs photo library access so that the user can select photos to share.</string>
+	    <key>NSCameraUsageDescription</key>
+		<string>The app needs photo library access so that the user can select photos to share.</string>
+		<key>NSMicrophoneUsageDescription </key>
+		<string>The app needs microphone access so that the user can record audio to share.</string>
 		<key>NSPhotoLibraryAddUsageDescription</key>
 		<string>The app saves received media to the photo library.</string>
 		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
@@ -64,6 +68,8 @@
 		<string>The app requires the local IP to communicate.</string>
 		<key>NSLocalNetworkUsageDescription</key>
 		<string>The app uses the local network to find and connect to nearby devices.</string>
+		<key>NSFileProtection</key>
+		<string>The app uses the local storage to save the files locally.</string>
 		<key>UIStatusBarHidden</key>
 		<false/>
 	</dict>

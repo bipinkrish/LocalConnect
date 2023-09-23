@@ -1,12 +1,14 @@
-// ignore_for_file: must_be_immutable, unused_import, depend_on_referenced_packages
+// ignore_for_file: must_be_immutable, unused_import, depend_on_referenced_packages, use_build_context_synchronously
 
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localconnect/data.dart';
-import 'package:localconnect/socket.dart';
+import 'package:localconnect/network.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:file_selector/file_selector.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   final DiscoveredDevice me;
@@ -30,19 +32,22 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Color youColor = defaultyouColor;
   bool markdown = defaultMarkdown;
   final notifier = providerContainer.read(chatMessagesProvider.notifier);
-  bool isComputer = Platform.isWindows || Platform.isLinux || Platform.isMacOS;
-  bool isMobile = Platform.isAndroid || Platform.isIOS;
+  late ProviderSubscription listenerObj;
 
   void _scrollToBottom() {
-    _scrollController.animateTo(
-      _scrollController.position.maxScrollExtent,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
-    );
+    try {
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    } catch (e) {
+      debugPrint(e.toString());
+    }
   }
 
   void listener() {
-    providerContainer.listen(
+    listenerObj = providerContainer.listen(
       chatMessagesProvider,
       (previous, next) {
         final updatedMessages = providerContainer.read(chatMessagesProvider);
@@ -54,7 +59,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         _scrollToBottom();
       },
       onError: (error, stackTrace) {
-        providerContainer.dispose();
         debugPrint(error.toString());
       },
     );
@@ -84,7 +88,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     initializeMarkdown();
     Future(
       () {
-        _sendMessage("${widget.me.deviceName} connected", info: true);
+        _sendTextMessage("${widget.me.deviceName} connected", info: true);
       },
     );
 
@@ -97,14 +101,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _scrollController.dispose();
     _messageNode.unfocus();
     _messageNode.dispose();
-    providerContainer.dispose();
+    listenerObj.close();
     super.dispose();
   }
 
-  void _sendMessage(String message, {bool info = false}) {
+  void _sendTextMessage(String message, {bool info = false}) {
     if (message.isNotEmpty) {
-      sendMessage(widget.peer.ip, widget.port, message.trim(), info);
-      notifier.addMessage(message.trim(), true, info: info);
+      sendText(widget.peer.ip, widget.port, message.trim(), info);
+      notifier.addMessage(message.trim(), true, "TEXT", info: info);
       _messageController.clear();
     } else if (isMobile) {
       _messageNode.unfocus();
@@ -115,7 +119,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        _sendMessage("${widget.me.deviceName} disconnected", info: true);
+        _sendTextMessage("${widget.me.deviceName} disconnected", info: true);
         return true;
       },
       child: Scaffold(
@@ -130,7 +134,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               padding: const EdgeInsets.only(
                   bottom: 10, left: 15, right: 10, top: 10),
               child: Row(
-                children: <Widget>[
+                children: [
                   Expanded(
                     child: TextField(
                       focusNode: _messageNode,
@@ -140,7 +144,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       decoration: InputDecoration(
                         hintText: 'Send a message...',
                         filled: true,
-                        fillColor: Colors.black54,
+                        fillColor:
+                            Theme.of(context).brightness == Brightness.light
+                                ? Colors.brown.shade50
+                                : Colors.black54,
                         contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 12),
                         border: OutlineInputBorder(
@@ -151,12 +158,21 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     ),
                   ),
                   IconButton(
+                    color: mainColor,
                     icon: const Icon(
-                      Icons.send_outlined,
-                      color: mainColor,
+                      Icons.attach_file_outlined,
                     ),
                     onPressed: () {
-                      _sendMessage(_messageController.text);
+                      _showAttachmentOptions();
+                    },
+                  ),
+                  IconButton(
+                    color: mainColor,
+                    icon: const Icon(
+                      Icons.send_outlined,
+                    ),
+                    onPressed: () {
+                      _sendTextMessage(_messageController.text);
                       if (isComputer) _messageNode.requestFocus();
                     },
                   ),
@@ -210,26 +226,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       : const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: message.isInfo
-                        ? Colors.grey
+                        ? Theme.of(context).brightness == Brightness.light
+                            ? Colors.brown.shade50
+                            : Colors.grey
                         : message.isYou
                             ? meColor
                             : youColor,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: markdown
-                      ? SizedBox(
-                          child: MarkdownBody(
-                            onTapLink: (text, href, title) async {
-                              final url = Uri.parse(href!);
-                              if (await canLaunchUrl(url)) {
-                                launchUrl(url);
-                              }
-                            },
-                            data: message.text,
-                            selectable: true,
-                          ),
-                        )
-                      : SelectableText(message.text),
+                  child: showMsgContent(message),
                 ),
               ),
             ],
@@ -237,6 +242,111 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         },
       ),
     );
+  }
+
+  Widget showText(String content) {
+    return markdown
+        ? SizedBox(
+            child: MarkdownBody(
+              onTapLink: (text, href, title) async {
+                final url = Uri.parse(href!);
+                if (await canLaunchUrl(url)) {
+                  launchUrl(url);
+                }
+              },
+              data: content,
+              selectable: true,
+            ),
+          )
+        : SelectableText(content);
+  }
+
+  Widget showMsgContent(Message message) {
+    switch (message.type) {
+      case "TEXT":
+        return showText(message.data);
+      case "IMAGE":
+        return Image.file(File(message.data));
+      // case "AUDIO":
+      //   return AudioPlayer(message.data);
+      // case "VIDEO":
+      //   return VideoPlayer(message.data);
+      // case "FILE":
+      //   return FileViewer(message.data);
+      default:
+        return const Icon(Icons.question_mark_outlined);
+    }
+  }
+
+  void _showAttachmentOptions() {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Container(
+          padding: const EdgeInsets.all(10),
+          height: 100,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              Column(
+                children: [
+                  IconButton(
+                    onPressed: () async {
+                      final ImagePicker picker = ImagePicker();
+                      final XFile? image =
+                          await picker.pickImage(source: ImageSource.gallery);
+                      Navigator.pop(context);
+                      if (image != null) {
+                        sendImage(widget.peer.ip, widget.port, image, false);
+                        notifier.addMessage(image.path, true, "IMAGE");
+                      }
+                    },
+                    icon: const Icon(Icons.image_outlined),
+                  ),
+                  const Text("Image")
+                ],
+              ),
+              Column(
+                children: [
+                  IconButton(
+                    onPressed: () {},
+                    icon: const Icon(Icons.videocam_outlined),
+                  ),
+                  const Text("Video")
+                ],
+              ),
+              Column(
+                children: [
+                  IconButton(
+                    onPressed: () async {
+                      final XFile? file = await openFile();
+                      Navigator.pop(context);
+                      debugPrint("file ${file!.path}");
+                    },
+                    icon: const Icon(Icons.insert_drive_file_outlined),
+                  ),
+                  const Text("File")
+                ],
+              ),
+              Column(
+                children: [
+                  IconButton(
+                    onPressed: () {},
+                    icon: const Icon(Icons.folder_outlined),
+                  ),
+                  const Text("Folder")
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // show snackbar
+  void showSnack(String content) {
+    ScaffoldMessenger.of(context).showSnackBar(snackbar(content, context));
   }
 
   void refresh() {

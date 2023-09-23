@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:localconnect/chat.dart';
 import 'package:localconnect/data.dart';
 import 'package:localconnect/setting.dart';
-import 'package:localconnect/socket.dart';
+import 'package:localconnect/network.dart';
 import 'package:network_discovery/network_discovery.dart';
 import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
 import 'package:window_size/window_size.dart';
@@ -49,7 +49,7 @@ class _HomePageState extends State<HomePage> {
   Set<DiscoveredDevice> discoveredDevices = {};
   List<DiscoveredNetwork> discoveredNetwork = [];
 
-  ServerSocket? serverSocket;
+  HttpServer? httpServer;
   int port = 4321;
   String localIP = "";
   String localName = "";
@@ -57,7 +57,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void dispose() {
-    serverSocket?.close();
+    httpServer?.close();
     super.dispose();
   }
 
@@ -75,8 +75,7 @@ class _HomePageState extends State<HomePage> {
     if (discoveredNetwork.isNotEmpty) {
       localIP = discoveredNetwork[0].addr;
       // ignore: use_build_context_synchronously
-      startServerSocket(
-          serverSocket, localIP, port, context, getAcceptAns, cancelPopup);
+      startHttpServer(httpServer, localIP, port, getAcceptAns, cancelPopup);
       startDeviceDiscovery();
     }
     refresh();
@@ -121,14 +120,12 @@ class _HomePageState extends State<HomePage> {
     if (ip == asking.ip) {
       Navigator.of(context).pop();
       showSnack("${asking.deviceName} Canceled Request");
-
       isAvailable = true;
     }
   }
 
   // pushing new chat screen
   void acceptCallback(DiscoveredDevice accpeer) async {
-    serverSocket?.close();
     isAvailable = false;
     final notifier = providerContainer.read(chatMessagesProvider.notifier);
     notifier.resetState();
@@ -158,9 +155,6 @@ class _HomePageState extends State<HomePage> {
     isAvailable = true;
     if (localIP.isNotEmpty) {
       if (tapped) {
-        serverSocket?.close();
-        startServerSocket(
-            serverSocket, localIP, port, context, getAcceptAns, cancelPopup);
         initiateLocalName();
       }
 
@@ -392,16 +386,20 @@ class _HomePageState extends State<HomePage> {
   }
 
   // some one is asking
-  void getAcceptAns(Socket client, String device, int type) {
+  void getAcceptAns(HttpResponse response, String device, int type) {
     if (!isAvailable) {
-      client.write("BUSY");
-      client.close();
+      response.add("BUSY".codeUnits);
+      response.close();
       return;
     }
 
     isAvailable = false;
-    asking =
-        DiscoveredDevice(client.remoteAddress.address.toString(), device, type);
+    final ip = response.connectionInfo?.remoteAddress.address;
+    if (ip == null) {
+      response.close();
+      return;
+    }
+    asking = DiscoveredDevice(ip, device, type);
 
     showModalBottomSheet(
       isDismissible: false,
@@ -424,8 +422,8 @@ class _HomePageState extends State<HomePage> {
                     ElevatedButton(
                       child: const Text("Reject"),
                       onPressed: () {
-                        client.write("REJECTED");
-                        client.close();
+                        response.add("REJECTED".codeUnits);
+                        response.close();
                         Navigator.of(context).pop();
                         isAvailable = true;
                       },
@@ -433,8 +431,8 @@ class _HomePageState extends State<HomePage> {
                     ElevatedButton(
                       child: const Text("Accept"),
                       onPressed: () {
-                        client.write("ACCEPTED");
-                        client.close();
+                        response.add("ACCEPTED".codeUnits);
+                        response.close();
                         Navigator.of(context).pop();
                         acceptCallback(asking);
                       },

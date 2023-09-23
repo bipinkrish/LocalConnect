@@ -3,18 +3,22 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path_provider/path_provider.dart';
 
 ////////////////////////////////////////////////////////////// Constants
 
 const String version = "v1.3.0";
 const String copyright = "© 2023 Bipin";
 const Color mainColor = Colors.deepOrange;
+bool isComputer = Platform.isWindows || Platform.isLinux || Platform.isMacOS;
+bool isMobile = Platform.isAndroid || Platform.isIOS;
 
 const String deviceNameKey = "DeviceName";
 const String youColorKey = 'YouColor';
 const String meColorKey = 'MeColor';
 const String markdownKey = 'MarkDown';
 const String themeKey = 'ThemeMode';
+const String destKey = "Destination";
 
 const Color defaultmeColor = Colors.blue;
 const Color defaultyouColor = Colors.green;
@@ -24,6 +28,21 @@ final String defaultYouColor =
     "${defaultyouColor.alpha},${defaultyouColor.red},${defaultyouColor.green},${defaultyouColor.blue}";
 const bool defaultMarkdown = false;
 const int defaultThemeMode = 2;
+
+Future<String> getDefaultDestination() async {
+  if (Platform.isAndroid) {
+    return (await getExternalStorageDirectory())!.path;
+  } else {
+    return (await getDownloadsDirectory())!.path;
+  }
+}
+
+Future<String> getDestination() async {
+  if (await isStored(destKey)) {
+    return await get(destKey);
+  }
+  return await getDefaultDestination();
+}
 
 ///////////////////////////////////////////////////////////// Custom Classes
 
@@ -65,12 +84,13 @@ class DiscoveredNetwork {
 }
 
 class Message {
-  final String text;
+  final String data;
   final bool isYou;
   final String time;
+  final String type;
   final bool isInfo;
 
-  Message(this.text, this.isYou, this.time, {this.isInfo = false});
+  Message(this.data, this.isYou, this.time, this.type, {this.isInfo = false});
 }
 
 ///////////////////////////////////////////////////////////// Others
@@ -147,11 +167,25 @@ class ChatMessagesNotifier extends StateNotifier<List<Message>> {
     state = [];
   }
 
-  void addMessage(String message, bool you, {bool info = false}) {
+  void addMessage(String data, bool you, String type, {bool info = false}) {
     state = [
       ...state,
-      Message(message, you, formatDateTime(DateTime.now()), isInfo: info)
+      Message(data, you, formatDateTime(DateTime.now()), type, isInfo: info)
     ];
+  }
+
+  void addImage(List<int> data, bool you, String type, String name) async {
+    if (type == "IMAGE") {
+      final destination = await getDestination();
+      final file = File("$destination/$name");
+      await file.writeAsBytes(data);
+
+      state = [
+        ...state,
+        Message(file.path, you, formatDateTime(DateTime.now()), type,
+            isInfo: false)
+      ];
+    }
   }
 }
 

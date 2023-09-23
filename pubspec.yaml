@@ -29,6 +29,13 @@ dependencies:
   salomon_bottom_bar: ^3.3.2
   # udp: ^5.0.3
 
+  file_selector: ^1.0.1
+  image_picker: ^1.0.4
+  http: ^1.1.0
+  # filesystem_picker: ^3.1.0
+  file_picker: ^5.5.0
+  path_provider: ^2.1.1
+
   window_size:
     git:
       url: https://github.com/google/flutter-desktop-embedding.git
