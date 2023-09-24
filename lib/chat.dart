@@ -263,65 +263,51 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         : SelectableText(content);
   }
 
+  GestureDetector getFileShow(String filepath, IconData icon) {
+    return GestureDetector(
+      onTap: () async {
+        isMobile
+            ? OpenFilex.open(filepath)
+            : launchUrlString('file://$filepath');
+      },
+      child: SizedBox(
+        width: 200,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Icon(
+              icon,
+              size: 30,
+            ),
+            const SizedBox(
+              width: 15,
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(path.basename(filepath).length <= maxlen
+                    ? path.basename(filepath)
+                    : '${path.basename(filepath).substring(0, maxlen)}...'),
+                Text("${getFileSize(filepath).toStringAsFixed(2)} MB")
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget showMsgContent(Message message) {
     switch (message.type) {
       case "TEXT":
         return showText(message.data);
+
       case "IMAGE":
-        return GestureDetector(
-            onTap: () async {
-              isMobile
-                  ? OpenFilex.open(message.data)
-                  : launchUrlString('file://${message.data}');
-            },
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Image.file(File(message.data)),
-                const SizedBox(height: 5),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    Text(path.basename(message.data)),
-                    Text("${getFileSize(message.data).toStringAsFixed(2)} MB")
-                  ],
-                ),
-              ],
-            ));
+        return getFileShow(message.data, Icons.image_outlined);
       case "VIDEO":
-        return GestureDetector(
-          onTap: () {
-            isMobile
-                ? OpenFilex.open(message.data)
-                : launchUrlString('file://${message.data}');
-          },
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              const Icon(Icons.play_arrow_outlined),
-              Text(path.basename(message.data)),
-              Text("${getFileSize(message.data).toStringAsFixed(2)} MB")
-            ],
-          ),
-        );
-      // case "AUDIO":
-      //   return AudioPlayer(message.data);
+        return getFileShow(message.data, Icons.videocam_outlined);
       case "FILE":
-        return GestureDetector(
-          onTap: () {
-            isMobile
-                ? OpenFilex.open(message.data)
-                : launchUrlString('file://${message.data}');
-          },
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              const Icon(Icons.file_open_outlined),
-              Text(path.basename(message.data)),
-              Text("${getFileSize(message.data).toStringAsFixed(2)} MB")
-            ],
-          ),
-        );
+        return getFileShow(message.data, Icons.insert_drive_file_outlined);
       default:
         return const Icon(Icons.question_mark_outlined);
     }
@@ -379,16 +365,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 children: [
                   IconButton(
                     onPressed: () async {
-                      final FilePickerResult? files =
-                          await FilePicker.platform.pickFiles();
+                      final FilePickerResult? files = await FilePicker.platform
+                          .pickFiles(allowMultiple: true);
                       Navigator.pop(context);
-                      if (files != null &&
-                          files.files.isNotEmpty &&
-                          files.files[0].path != null) {
-                        final XFile file = XFile(files.files[0].path ?? "/");
-                        sendFile(
-                            widget.peer.ip, widget.port, file, "FILE", false);
-                        notifier.addMessage(file.path, true, "FILE");
+                      if (files != null && files.files.isNotEmpty) {
+                        for (PlatformFile pfile in files.files) {
+                          if (pfile.path != null) {
+                            final XFile file = XFile(pfile.path ?? "/");
+                            sendFile(widget.peer.ip, widget.port, file, "FILE",
+                                false);
+                            notifier.addMessage(file.path, true, "FILE");
+                          }
+                        }
                       }
                     },
                     icon: const Icon(Icons.insert_drive_file_outlined),

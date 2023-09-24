@@ -7,9 +7,10 @@ import 'package:flutter/services.dart';
 import 'package:localconnect/data.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:toggle_switch/toggle_switch.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher_string.dart';
+import 'package:file_picker/file_picker.dart';
 
 class Settings extends StatefulWidget {
   String initialDeviceName;
@@ -48,8 +49,13 @@ class _SettingsState extends State<Settings> {
 
   // setting folder
   Future<void> setDestinationFolder() async {
-    final String? path;
-    path = await FilePicker.platform.getDirectoryPath();
+    if (Platform.isAndroid &&
+        !await Permission.manageExternalStorage.status.isGranted) {
+      await Permission.manageExternalStorage.request();
+    }
+
+    String? path = await FilePicker.platform.getDirectoryPath();
+
     if (path != null) {
       destination = path.replaceAll('\\', '/');
       if (!destination.contains("LocalConnect")) {

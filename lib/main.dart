@@ -371,9 +371,16 @@ class _HomePageState extends State<HomePage> {
                         )
                     ],
                     onChanged: (value) {
-                      localIP = value!;
-                      startDeviceDiscovery(tapped: true);
-                      refresh();
+                      if (value != null) {
+                        localIP = value;
+                        if (httpServer != null) {
+                          httpServer!.close();
+                        }
+                        startHttpServer(httpServer, localIP, port, getAcceptAns,
+                            cancelPopup);
+                        startDeviceDiscovery(tapped: true);
+                        refresh();
+                      }
                     },
                   ),
                 ],
