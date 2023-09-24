@@ -8,8 +8,8 @@ import 'package:localconnect/data.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:toggle_switch/toggle_switch.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 
 class Settings extends StatefulWidget {
   String initialDeviceName;
@@ -255,8 +255,8 @@ class _SettingsState extends State<Settings> {
                     ),
                     TextButton(
                       onPressed: () {
-                        launchUrl(Uri.parse(
-                            "https://github.com/bipinkrish/LocalConnect"));
+                        launchUrlString(
+                            "https://github.com/bipinkrish/LocalConnect");
                       },
                       child: const Text(
                         "Source Code (GitHub)",

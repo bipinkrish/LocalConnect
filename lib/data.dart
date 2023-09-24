@@ -7,7 +7,7 @@ import 'package:path_provider/path_provider.dart';
 
 ////////////////////////////////////////////////////////////// Constants
 
-const String version = "v1.3.0";
+const String version = "v1.3.1";
 const String copyright = "© 2023 Bipin";
 const Color mainColor = Colors.deepOrange;
 bool isComputer = Platform.isWindows || Platform.isLinux || Platform.isMacOS;
@@ -174,18 +174,16 @@ class ChatMessagesNotifier extends StateNotifier<List<Message>> {
     ];
   }
 
-  void addImage(List<int> data, bool you, String type, String name) async {
-    if (type == "IMAGE") {
-      final destination = await getDestination();
-      final file = File("$destination/$name");
-      await file.writeAsBytes(data);
+  void addFile(List<int> data, bool you, String type, String name) async {
+    final destination = await getDestination();
+    final file = File("$destination/$name");
+    await file.writeAsBytes(data);
 
-      state = [
-        ...state,
-        Message(file.path, you, formatDateTime(DateTime.now()), type,
-            isInfo: false)
-      ];
-    }
+    state = [
+      ...state,
+      Message(file.path, you, formatDateTime(DateTime.now()), type,
+          isInfo: false)
+    ];
   }
 }
 
@@ -299,6 +297,17 @@ Column getcol(String name, String value) {
       )
     ],
   );
+}
+
+double getFileSize(String filePath) {
+  File file = File(filePath);
+
+  if (file.existsSync()) {
+    int fileSizeBytes = file.lengthSync();
+    return (fileSizeBytes / (1024 * 1024));
+  } else {
+    return -1;
+  }
 }
 
 /////////////////////////////////////////////////// Shared Prefrences

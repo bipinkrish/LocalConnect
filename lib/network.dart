@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:localconnect/data.dart';
 import 'package:http/http.dart' as http;
 
@@ -47,7 +47,6 @@ void startHttpServer(HttpServer? httpServer, String localIP, int port,
             if (ip != null) {
               cancelCallback(ip);
             }
-            await request.response.close();
             break;
 
           default:
@@ -64,13 +63,14 @@ void startHttpServer(HttpServer? httpServer, String localIP, int port,
               final data = await utf8.decodeStream(request);
               chatMessagesNotifier.addMessage(data, false, type ?? "TEXT",
                   info: info == "true");
-            } else if (type == "IMAGE") {
+            } else {
               final name = parsedData["name"];
               final List<int> payload = await request
                   .fold<List<int>>(<int>[], (a, b) => a..addAll(b));
 
-              chatMessagesNotifier.addImage(
-                  payload, false, type ?? 'IMAGE', name ?? "temp.jpg");
+              if (name != null && type != null) {
+                chatMessagesNotifier.addFile(payload, false, type, name);
+              }
             }
             break;
         }
@@ -124,11 +124,12 @@ void sendText(String ipAddress, int port, String msg, bool info) {
       body: utf8.encode(msg));
 }
 
-// sending img
-void sendImage(String ipAddress, int port, XFile file, bool info) async {
+// sending file
+void sendFile(
+    String ipAddress, int port, XFile file, String type, bool info) async {
   const String messagePost = "MESSAGE";
-  const type = "IMAGE";
   final name = file.name;
+
   http.post(
       Uri.parse(
           "http://$ipAddress:$port?messageType=$messagePost&name=$name&type=$type&info=$info"),

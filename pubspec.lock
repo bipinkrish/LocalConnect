@@ -213,10 +213,10 @@ packages:
     dependency: "direct main"
     description:
       name: cupertino_icons
-      sha256: d57953e10f9f8327ce64a508a355f0b1ec902193f66288e8cb5070e7c47eeb2d
+      sha256: caac504f942f41dfadcf45229ce8c47065b93919a12739f20d6173a883c5ec73
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.6"
+    version: "1.0.2"
   dart_ping:
     dependency: transitive
     description:
@@ -277,34 +277,10 @@ packages:
     dependency: "direct main"
     description:
       name: file_picker
-      sha256: be325344c1f3070354a1d84a231a1ba75ea85d413774ec4bdf444c023342e030
+      sha256: bdfa035a974a0c080576c4c8ed01cdf9d1b406a04c7daa05443ef0383a97bedc
       url: "https://pub.dev"
     source: hosted
-    version: "5.5.0"
-  file_selector:
-    dependency: "direct main"
-    description:
-      name: file_selector
-      sha256: "84eaf3e034d647859167d1f01cfe7b6352488f34c1b4932635012b202014c25b"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.1"
-  file_selector_android:
-    dependency: transitive
-    description:
-      name: file_selector_android
-      sha256: d41e165d6f798ca941d536e5dc93494d50e78c571c28ad60cfe0b0fefeb9f1e7
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.5.0+3"
-  file_selector_ios:
-    dependency: transitive
-    description:
-      name: file_selector_ios
-      sha256: b3fbdda64aa2e335df6e111f6b0f1bb968402ed81d2dd1fa4274267999aa32c2
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.5.1+6"
+    version: "5.3.4"
   file_selector_linux:
     dependency: transitive
     description:
@@ -329,14 +305,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.6.1"
-  file_selector_web:
-    dependency: transitive
-    description:
-      name: file_selector_web
-      sha256: dc6622c4d66cb1bee623ddcc029036603c6cc45c85e4a775bb06008d61c809c1
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.9.2+1"
   file_selector_windows:
     dependency: transitive
     description:
@@ -378,10 +346,10 @@ packages:
     dependency: "direct dev"
     description:
       name: flutter_lints
-      sha256: a25a15ebbdfc33ab1cd26c63a6ee519df92338a9c10f122adda92938253bef04
+      sha256: "7e6d14fb09d4ca216cae2dacecaeaae9286deb922089bb1ab0200575e5390d50"
       url: "https://pub.dev"
     source: hosted
-    version: "2.0.3"
+    version: "2.0.0"
   flutter_markdown:
     dependency: "direct main"
     description:
@@ -656,6 +624,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.0"
+  open_filex:
+    dependency: "direct main"
+    description:
+      name: open_filex
+      sha256: a6c95237767c5647e68b71a476602fcf4f1bfc530c126265e53addae22ef5fc2
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.3.4"
   package_config:
     dependency: transitive
     description:
@@ -665,7 +641,7 @@ packages:
     source: hosted
     version: "2.1.0"
   path:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: path
       sha256: "8829d8a55c13fc0e37127c29fedf290c102f4e40ae94ada574091fe0ff96c917"

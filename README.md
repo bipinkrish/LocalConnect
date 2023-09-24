@@ -7,7 +7,7 @@ Connect locally, share messages, files, video calls and stay connected when you'
 ## Features
 
 - [x] Share text
-- [ ] Share files
+- [x] Share files
 - [ ] Video calls
 
 ## Screenshots
@@ -21,3 +21,7 @@ Connect locally, share messages, files, video calls and stay connected when you'
   <img width="45%" altname="DiscoveredDevice" src="https://github.com/bipinkrish/LocalConnect/assets/87369440/7af925c4-339a-4309-bf57-315afbb67cb9">
   <img width="45%" altname="ChatScreen" src="https://github.com/bipinkrish/LocalConnect/assets/87369440/26f5aa8f-b5f8-4b84-ac90-7b9fdcf3722e">
 </div>
+
+## Alternatives
+
+  * [LocalSend](https://github.com/localsend/localsend)

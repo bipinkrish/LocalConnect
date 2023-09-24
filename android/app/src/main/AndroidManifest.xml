@@ -4,7 +4,6 @@
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon"
         android:enableOnBackInvokedCallback="true"
-        requestLegacyStorage="true"
         requestLegacyExternalStorage="true">
 
         <activity android:name=".MainActivity"

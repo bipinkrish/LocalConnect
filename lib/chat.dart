@@ -7,8 +7,11 @@ import 'package:localconnect/data.dart';
 import 'package:localconnect/network.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:file_selector/file_selector.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:url_launcher/url_launcher_string.dart';
+import 'package:open_filex/open_filex.dart';
+import 'package:path/path.dart' as path;
 
 class ChatScreen extends ConsumerStatefulWidget {
   final DiscoveredDevice me;
@@ -249,9 +252,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         ? SizedBox(
             child: MarkdownBody(
               onTapLink: (text, href, title) async {
-                final url = Uri.parse(href!);
-                if (await canLaunchUrl(url)) {
-                  launchUrl(url);
+                if (href != null && await canLaunchUrlString(href)) {
+                  launchUrlString(href);
                 }
               },
               data: content,
@@ -266,13 +268,60 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       case "TEXT":
         return showText(message.data);
       case "IMAGE":
-        return Image.file(File(message.data));
+        return GestureDetector(
+            onTap: () async {
+              isMobile
+                  ? OpenFilex.open(message.data)
+                  : launchUrlString('file://${message.data}');
+            },
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Image.file(File(message.data)),
+                const SizedBox(height: 5),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    Text(path.basename(message.data)),
+                    Text("${getFileSize(message.data).toStringAsFixed(2)} MB")
+                  ],
+                ),
+              ],
+            ));
+      case "VIDEO":
+        return GestureDetector(
+          onTap: () {
+            isMobile
+                ? OpenFilex.open(message.data)
+                : launchUrlString('file://${message.data}');
+          },
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              const Icon(Icons.play_arrow_outlined),
+              Text(path.basename(message.data)),
+              Text("${getFileSize(message.data).toStringAsFixed(2)} MB")
+            ],
+          ),
+        );
       // case "AUDIO":
       //   return AudioPlayer(message.data);
-      // case "VIDEO":
-      //   return VideoPlayer(message.data);
-      // case "FILE":
-      //   return FileViewer(message.data);
+      case "FILE":
+        return GestureDetector(
+          onTap: () {
+            isMobile
+                ? OpenFilex.open(message.data)
+                : launchUrlString('file://${message.data}');
+          },
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              const Icon(Icons.file_open_outlined),
+              Text(path.basename(message.data)),
+              Text("${getFileSize(message.data).toStringAsFixed(2)} MB")
+            ],
+          ),
+        );
       default:
         return const Icon(Icons.question_mark_outlined);
     }
@@ -297,7 +346,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           await picker.pickImage(source: ImageSource.gallery);
                       Navigator.pop(context);
                       if (image != null) {
-                        sendImage(widget.peer.ip, widget.port, image, false);
+                        sendFile(
+                            widget.peer.ip, widget.port, image, "IMAGE", false);
                         notifier.addMessage(image.path, true, "IMAGE");
                       }
                     },
@@ -309,7 +359,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               Column(
                 children: [
                   IconButton(
-                    onPressed: () {},
+                    onPressed: () async {
+                      final ImagePicker picker = ImagePicker();
+                      final XFile? video =
+                          await picker.pickVideo(source: ImageSource.gallery);
+                      Navigator.pop(context);
+                      if (video != null) {
+                        sendFile(
+                            widget.peer.ip, widget.port, video, "VIDEO", false);
+                        notifier.addMessage(video.path, true, "VIDEO");
+                      }
+                    },
                     icon: const Icon(Icons.videocam_outlined),
                   ),
                   const Text("Video")
@@ -319,22 +379,21 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 children: [
                   IconButton(
                     onPressed: () async {
-                      final XFile? file = await openFile();
+                      final FilePickerResult? files =
+                          await FilePicker.platform.pickFiles();
                       Navigator.pop(context);
-                      debugPrint("file ${file!.path}");
+                      if (files != null &&
+                          files.files.isNotEmpty &&
+                          files.files[0].path != null) {
+                        final XFile file = XFile(files.files[0].path ?? "/");
+                        sendFile(
+                            widget.peer.ip, widget.port, file, "FILE", false);
+                        notifier.addMessage(file.path, true, "FILE");
+                      }
                     },
                     icon: const Icon(Icons.insert_drive_file_outlined),
                   ),
                   const Text("File")
-                ],
-              ),
-              Column(
-                children: [
-                  IconButton(
-                    onPressed: () {},
-                    icon: const Icon(Icons.folder_outlined),
-                  ),
-                  const Text("Folder")
                 ],
               ),
             ],
