@@ -7,7 +7,7 @@ import 'package:path_provider/path_provider.dart';
 
 ////////////////////////////////////////////////////////////// Constants
 
-const String version = "v1.3.1";
+const String version = "v1.3.2";
 const String copyright = "© 2023 Bipin";
 const Color mainColor = Colors.deepOrange;
 bool isComputer = Platform.isWindows || Platform.isLinux || Platform.isMacOS;
