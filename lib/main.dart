@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,6 +11,7 @@ import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
 import 'package:window_size/window_size.dart';
 import 'package:adaptive_theme/adaptive_theme.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:file_picker/file_picker.dart';
 
 void main() {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
@@ -48,6 +50,7 @@ class _HomePageState extends State<HomePage> {
   DiscoveredDevice asking = DiscoveredDevice("", "", 0);
   Set<DiscoveredDevice> discoveredDevices = {};
   List<DiscoveredNetwork> discoveredNetwork = [];
+  Set<String> enteredIPs = {};
 
   HttpServer? httpServer;
   int port = 4321;
@@ -55,14 +58,23 @@ class _HomePageState extends State<HomePage> {
   String localName = "";
   int _currentIndex = 0;
 
+  Timer? discoveryTimer;
+  Timer? removalTimer;
+
   @override
   void dispose() {
     httpServer?.close();
+    if (isMobile) {
+      FilePicker.platform.clearTemporaryFiles();
+    }
     super.dispose();
   }
 
   @override
   void initState() {
+    if (isMobile) {
+      FilePicker.platform.clearTemporaryFiles();
+    }
     initiateLocalIP();
     initiateLocalName();
     super.initState();
@@ -76,6 +88,7 @@ class _HomePageState extends State<HomePage> {
       localIP = discoveredNetwork[0].addr;
       // ignore: use_build_context_synchronously
       startHttpServer(httpServer, localIP, port, getAcceptAns, cancelPopup);
+      isAvailable = true;
       startDeviceDiscovery();
     }
     refresh();
@@ -88,14 +101,14 @@ class _HomePageState extends State<HomePage> {
   }
 
   // new device's metadata received
-  void setDisState(String ipAddress, String name, int type) {
+  void newDiscovery(String ipAddress, String name, int type) {
     discoveredDevices.add(DiscoveredDevice(ipAddress, name, type));
     showSnack("Discovered $name");
     refresh();
   }
 
   // asked request response
-  void setAccAns(String resp) {
+  void manageResponse(String resp) {
     if (isRequesting) {
       isAccepted = (resp == "ACCEPTED");
       isRequesting = false;
@@ -121,6 +134,7 @@ class _HomePageState extends State<HomePage> {
       Navigator.of(context).pop();
       showSnack("${asking.deviceName} Canceled Request");
       isAvailable = true;
+      asking = DiscoveredDevice("", "", 0);
     }
   }
 
@@ -141,7 +155,7 @@ class _HomePageState extends State<HomePage> {
       ),
     );
     if (!mounted) return;
-    startDeviceDiscovery();
+    isAvailable = true;
   }
 
   // show snackbar
@@ -150,39 +164,59 @@ class _HomePageState extends State<HomePage> {
   }
 
   // discover devices on network
-  void startDeviceDiscovery({bool tapped = false}) async {
-    discoveredDevices = {};
-    isAvailable = true;
-    if (localIP.isNotEmpty) {
-      if (tapped) {
-        initiateLocalName();
-      }
-
+  void startDeviceDiscovery() async {
+    discoveryTimer = Timer.periodic(const Duration(seconds: 2), (Timer timer) {
       final stream = NetworkDiscovery.discover(
         localIP.split('.').take(3).join('.'),
         port,
       );
 
-      stream.listen((NetworkAddress addr) {
-        if (addr.ip != localIP) {
-          askMetadataRequest(addr.ip, port, setDisState);
+      stream.listen((NetworkAddress addr) async {
+        if (addr.ip != localIP &&
+            !discoveredDevices.any((element) => element.ip == addr.ip)) {
+          debugPrint("Asking MetaData ${addr.ip}");
+          final response = await askMetadataRequest(addr.ip, port);
+          if (response.isNotEmpty) {
+            newDiscovery(addr.ip, response[0], response[1]);
+          }
         }
       });
-      if (tapped) {
-        showSnack("Re-Freshed Configarations");
+    });
+
+    removalTimer =
+        Timer.periodic(const Duration(seconds: 5), (Timer tmr) async {
+      for (DiscoveredDevice element in discoveredDevices) {
+        if (!await isDeviceOn(element.ip, port)) {
+          discoveredDevices.remove(element);
+          enteredIPs.removeWhere((ele) => ele == element.ip);
+          refresh();
+          break;
+        }
       }
-    }
-    refresh();
+    });
   }
 
   void discoverAddr(String ip) async {
-    showSnack("Checking $ip");
-    final stream = await NetworkDiscovery.discoverFromAddress(ip, port);
-    if (stream.ip != localIP) {
-      askMetadataRequest(stream.ip, port, setDisState);
+    if (enteredIPs.any((element) => element == ip) ||
+        discoveredDevices.any((element) => element.ip == ip)) {
+      showSnack("$ip is already Discovered");
+      return;
     }
+
+    if (ip != localIP) {
+      showSnack("Checking $ip");
+      enteredIPs.add(ip);
+
+      debugPrint("Asking MetaData $ip");
+      final response = await askMetadataRequest(ip, port);
+      if (response.isNotEmpty) {
+        newDiscovery(ip, response[0], response[1]);
+      }
+    }
+    showSnack("No device on $ip");
   }
 
+  // device box
   Container getListBox(DiscoveredDevice device, {bool plus = false}) {
     const int pad = 16;
 
@@ -236,16 +270,6 @@ class _HomePageState extends State<HomePage> {
     final deviceList = discoveredDevices.toList();
 
     return Scaffold(
-      floatingActionButton: _currentIndex == 0
-          ? FloatingActionButton(
-              onPressed: () {
-                startDeviceDiscovery(tapped: true);
-              },
-              child: const Icon(
-                Icons.refresh_outlined,
-              ),
-            )
-          : null,
       bottomNavigationBar: SalomonBottomBar(
         currentIndex: _currentIndex,
         onTap: (i) {
@@ -383,7 +407,13 @@ class _HomePageState extends State<HomePage> {
                                   }
                                   startHttpServer(httpServer, localIP, port,
                                       getAcceptAns, cancelPopup);
-                                  startDeviceDiscovery(tapped: true);
+                                  if (discoveryTimer != null) {
+                                    discoveryTimer!.cancel();
+                                  }
+                                  if (removalTimer != null) {
+                                    removalTimer!.cancel();
+                                  }
+                                  startDeviceDiscovery();
                                   refresh();
                                 }
                               },
@@ -504,14 +534,21 @@ class _HomePageState extends State<HomePage> {
                             autofocus: true,
                             style: getButtonStyle(),
                             child: const Text("Ask"),
-                            onPressed: () {
+                            onPressed: () async {
                               isRequesting = true;
                               isAvailable = false;
                               peer = receiver;
-                              askAccept(
-                                  receiver.ip, port, localName, setAccAns);
                               if (mounted) {
                                 setState(() {});
+                              }
+
+                              final resp = await askAccept(
+                                receiver.ip,
+                                port,
+                                localName,
+                              );
+                              if (resp != "") {
+                                manageResponse(resp);
                               }
                             },
                           ),

@@ -86,6 +86,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   @override
   void initState() {
+    notifier.ip = widget.peer.ip;
     listener();
     initializeColors();
     initializeMarkdown();

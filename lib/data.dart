@@ -7,7 +7,7 @@ import 'package:path_provider/path_provider.dart';
 
 ////////////////////////////////////////////////////////////// Constants
 
-const String version = "v1.3.2";
+const String version = "v1.3.3";
 const String copyright = "© 2023 Bipin";
 const Color mainColor = Colors.deepOrange;
 bool isComputer = Platform.isWindows || Platform.isLinux || Platform.isMacOS;
@@ -164,9 +164,11 @@ final chatMessagesProvider =
 
 class ChatMessagesNotifier extends StateNotifier<List<Message>> {
   ChatMessagesNotifier() : super([]);
+  String ip = "";
 
   void resetState() {
     state = [];
+    ip = "";
   }
 
   void addMessage(String data, bool you, String type,
@@ -186,7 +188,7 @@ class ChatMessagesNotifier extends StateNotifier<List<Message>> {
     state = [
       ...state,
       Message(file.path, you, formatDateTime(DateTime.now()), type,
-          isInfo: false)
+          size: getFileSize(file.path), isInfo: false)
     ];
   }
 }

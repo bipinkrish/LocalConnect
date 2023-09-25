@@ -19,11 +19,17 @@ void startHttpServer(HttpServer? httpServer, String localIP, int port,
 
     await for (final request in httpServer) {
       final Uri uri = request.uri;
-      final String? messageType = uri.queryParameters['messageType'];
+      final List<String> segments = uri.pathSegments;
+      final String messageType = segments.isNotEmpty ? segments.first : '';
       final parsedData = uri.queryParameters;
 
       if (request.method == 'GET') {
         switch (messageType) {
+          case "":
+            request.response.add("LocalConnect $version".codeUnits);
+            await request.response.close();
+            break;
+
           case 'GET_METADATA':
             final deviceName = await getDeviceName();
             final platformType = getPlatformType();
@@ -48,13 +54,17 @@ void startHttpServer(HttpServer? httpServer, String localIP, int port,
             if (ip != null) {
               cancelCallback(ip);
             }
+            await request.response.close();
             break;
 
           default:
-            debugPrint("Unknow Data");
+            request.response.add("LocalConnect $version".codeUnits);
+            await request.response.close();
             break;
         }
-      } else if (request.method == 'POST') {
+      } else if (request.method == 'POST' &&
+          chatMessagesNotifier.ip ==
+              request.connectionInfo?.remoteAddress.address) {
         switch (messageType) {
           case 'MESSAGE':
             final type = parsedData['type'];
@@ -73,6 +83,8 @@ void startHttpServer(HttpServer? httpServer, String localIP, int port,
                 chatMessagesNotifier.addFile(payload, false, type, name);
               }
             }
+          default:
+            await request.response.close();
             break;
         }
       } else {
@@ -86,54 +98,59 @@ void startHttpServer(HttpServer? httpServer, String localIP, int port,
 }
 
 // asking meta data
-void askMetadataRequest(String ipAddress, int port, Function setstate) async {
-  const String metadataReq = "GET_METADATA";
-  final response = await http
-      .get(Uri.parse("http://$ipAddress:$port?messageType=$metadataReq"));
+Future<List> askMetadataRequest(String ipAddress, int port) async {
+  try {
+    final response =
+        await http.get(Uri.parse("http://$ipAddress:$port/GET_METADATA/"));
 
-  if (response.statusCode == 200) {
-    final dynamic jsondata = jsonDecode(response.body);
-    setstate(ipAddress, jsondata['deviceName'], jsondata['platformType']);
+    if (response.statusCode == 200) {
+      final dynamic jsondata = jsonDecode(response.body);
+      return [jsondata['deviceName'], jsondata['platformType']];
+    }
+    return [];
+  } catch (e) {
+    return [];
+  }
+}
+
+// is on
+Future<bool> isDeviceOn(String ipAddress, int port) async {
+  try {
+    await http.get(Uri.parse("http://$ipAddress:$port/"));
+    return true;
+  } catch (e) {
+    return false;
   }
 }
 
 // ask accept
-void askAccept(
-    String ipAddress, int port, String device, Function setAccAns) async {
-  const String askAcceptReq = "ASK_ACCEPT";
+Future<String> askAccept(String ipAddress, int port, String device) async {
   final response = await http.get(Uri.parse(
-      "http://$ipAddress:$port?messageType=$askAcceptReq&device=$device&platformType=$thisPlatform"));
+      "http://$ipAddress:$port/ASK_ACCEPT/?device=$device&platformType=$thisPlatform"));
 
   if (response.statusCode == 200) {
-    setAccAns(response.body);
+    return response.body;
   }
+  return "";
 }
 
 // canceling request
 void sendCancel(String ipAddress, int port) {
-  const String cancelReq = "CANCEL";
-  http.get(Uri.parse("http://$ipAddress:$port?messageType=$cancelReq"));
+  http.get(Uri.parse("http://$ipAddress:$port/CANCEL/"));
 }
 
 // sending msg
 void sendText(String ipAddress, int port, String msg, bool info) {
-  const String messagePost = "MESSAGE";
-  const type = "TEXT";
-  http.post(
-      Uri.parse(
-          "http://$ipAddress:$port?messageType=$messagePost&type=$type&info=$info"),
+  http.post(Uri.parse("http://$ipAddress:$port/MESSAGE/?type=TEXT&info=$info"),
       body: utf8.encode(msg));
 }
 
 // sending file
 void sendFile(
     String ipAddress, int port, XFile file, String type, bool info) async {
-  const String messagePost = "MESSAGE";
-  final name = file.name;
-
   http.post(
       Uri.parse(
-          "http://$ipAddress:$port?messageType=$messagePost&name=$name&type=$type&info=$info"),
+          "http://$ipAddress:$port/MESSAGE/?name=${file.name}&type=$type&info=$info"),
       body: await file.readAsBytes());
 
   if (isMobile) {
