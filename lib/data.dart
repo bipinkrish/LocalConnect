@@ -89,8 +89,10 @@ class Message {
   final String time;
   final String type;
   final bool isInfo;
+  final double size;
 
-  Message(this.data, this.isYou, this.time, this.type, {this.isInfo = false});
+  Message(this.data, this.isYou, this.time, this.type,
+      {this.size = 0, this.isInfo = false});
 }
 
 ///////////////////////////////////////////////////////////// Others
@@ -167,10 +169,12 @@ class ChatMessagesNotifier extends StateNotifier<List<Message>> {
     state = [];
   }
 
-  void addMessage(String data, bool you, String type, {bool info = false}) {
+  void addMessage(String data, bool you, String type,
+      {double size = 0, bool info = false}) {
     state = [
       ...state,
-      Message(data, you, formatDateTime(DateTime.now()), type, isInfo: info)
+      Message(data, you, formatDateTime(DateTime.now()), type,
+          size: size, isInfo: info)
     ];
   }
 
@@ -290,7 +294,7 @@ Column getcol(String name, String value) {
   return Column(
     mainAxisAlignment: MainAxisAlignment.center,
     children: [
-      Text("$name "),
+      Text(name),
       Text(
         value.length <= maxlen ? value : '${value.substring(0, maxlen)}...',
         style: const TextStyle(color: mainColor),

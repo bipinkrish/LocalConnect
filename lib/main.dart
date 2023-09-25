@@ -309,7 +309,7 @@ class _HomePageState extends State<HomePage> {
 
                   // help msg
                   Visibility(
-                    visible: deviceList.isEmpty,
+                    visible: deviceList.isEmpty && discoveredNetwork.isNotEmpty,
                     child: const Padding(
                       padding: EdgeInsets.all(50),
                       child: Text(
@@ -325,69 +325,77 @@ class _HomePageState extends State<HomePage> {
   }
 
   // you box
-  Visibility getYouBox() {
-    return Visibility(
-      visible: (localName.isNotEmpty && localIP.isNotEmpty),
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Container(
-          padding: const EdgeInsets.all(15),
-          width: double.infinity,
-          decoration: BoxDecoration(
-            color: Theme.of(context).brightness == Brightness.light
-                ? Colors.brown.shade50
-                : Colors.black,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              Icon(thisSysIcon),
-              getcol("Device", localName),
-              getcol("IP", localIP),
-              // getcol("Port", port.toString()),
-              Column(
+  Padding getYouBox() {
+    return Padding(
+      padding: const EdgeInsets.all(8),
+      child: Container(
+        padding: const EdgeInsets.all(15),
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: Theme.of(context).brightness == Brightness.light
+              ? Colors.brown.shade50
+              : Colors.black,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: (localName.isNotEmpty && localIP.isNotEmpty)
+            ? Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  const Text("Interface "),
-                  DropdownButton(
-                    style: const TextStyle(color: mainColor),
-                    value: localIP,
-                    borderRadius: BorderRadius.circular(8),
-                    items: [
-                      for (DiscoveredNetwork network in discoveredNetwork)
-                        DropdownMenuItem(
-                          value: network.addr,
-                          child: Text(
-                            network.name,
-                            style: TextStyle(
-                              color: localIP == network.addr
-                                  ? mainColor
-                                  : Theme.of(context).brightness ==
-                                          Brightness.light
-                                      ? Colors.black
-                                      : Colors.white,
+                  Icon(thisSysIcon),
+                  getcol("Device", localName),
+                  getcol("IP", localIP),
+                  // getcol("Port", port.toString()),
+                  Column(
+                    children: [
+                      const Text("Interface"),
+                      discoveredNetwork.length == 1
+                          ? Text(
+                              discoveredNetwork[0].name,
+                              style: const TextStyle(color: mainColor),
+                            )
+                          : DropdownButton(
+                              style: const TextStyle(color: mainColor),
+                              value: localIP,
+                              borderRadius: BorderRadius.circular(8),
+                              items: [
+                                for (DiscoveredNetwork network
+                                    in discoveredNetwork)
+                                  DropdownMenuItem(
+                                    value: network.addr,
+                                    child: Text(
+                                      network.name,
+                                      style: TextStyle(
+                                        color: localIP == network.addr
+                                            ? mainColor
+                                            : Theme.of(context).brightness ==
+                                                    Brightness.light
+                                                ? Colors.black
+                                                : Colors.white,
+                                      ),
+                                    ),
+                                  )
+                              ],
+                              onChanged: (value) {
+                                if (value != null) {
+                                  localIP = value;
+                                  if (httpServer != null) {
+                                    httpServer!.close();
+                                  }
+                                  startHttpServer(httpServer, localIP, port,
+                                      getAcceptAns, cancelPopup);
+                                  startDeviceDiscovery(tapped: true);
+                                  refresh();
+                                }
+                              },
                             ),
-                          ),
-                        )
                     ],
-                    onChanged: (value) {
-                      if (value != null) {
-                        localIP = value;
-                        if (httpServer != null) {
-                          httpServer!.close();
-                        }
-                        startHttpServer(httpServer, localIP, port, getAcceptAns,
-                            cancelPopup);
-                        startDeviceDiscovery(tapped: true);
-                        refresh();
-                      }
-                    },
                   ),
                 ],
+              )
+            : const Text(
+                "No interfaces found\nRestart after connecting to a network",
+                textAlign: TextAlign.center,
               ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -427,6 +435,7 @@ class _HomePageState extends State<HomePage> {
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     ElevatedButton(
+                      style: getButtonStyle(),
                       child: const Text("Reject"),
                       onPressed: () {
                         response.add("REJECTED".codeUnits);
@@ -436,6 +445,8 @@ class _HomePageState extends State<HomePage> {
                       },
                     ),
                     ElevatedButton(
+                      autofocus: true,
+                      style: getButtonStyle(),
                       child: const Text("Accept"),
                       onPressed: () {
                         response.add("ACCEPTED".codeUnits);
@@ -481,6 +492,7 @@ class _HomePageState extends State<HomePage> {
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
                           ElevatedButton(
+                            style: getButtonStyle(),
                             child: const Text("Cancel"),
                             onPressed: () {
                               isRequesting = false;
@@ -489,6 +501,8 @@ class _HomePageState extends State<HomePage> {
                             },
                           ),
                           ElevatedButton(
+                            autofocus: true,
+                            style: getButtonStyle(),
                             child: const Text("Ask"),
                             onPressed: () {
                               isRequesting = true;
@@ -514,6 +528,8 @@ class _HomePageState extends State<HomePage> {
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
                           ElevatedButton(
+                            autofocus: true,
+                            style: getButtonStyle(),
                             child: const Text("Cancel"),
                             onPressed: () {
                               sendCancel(receiver.ip, port);
@@ -628,12 +644,13 @@ class _HomePageState extends State<HomePage> {
                 ],
               ),
               const SizedBox(
-                height: 10,
+                height: 15,
               ),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   ElevatedButton(
+                    style: getButtonStyle(),
                     child: const Text("Cancel"),
                     onPressed: () {
                       Navigator.of(context).pop();
@@ -641,6 +658,7 @@ class _HomePageState extends State<HomePage> {
                     },
                   ),
                   ElevatedButton(
+                    style: getButtonStyle(),
                     child: const Text("Discover"),
                     onPressed: () => clickediscover(),
                   ),
@@ -650,6 +668,17 @@ class _HomePageState extends State<HomePage> {
           ),
         );
       },
+    );
+  }
+
+  ButtonStyle getButtonStyle() {
+    return ButtonStyle(
+      backgroundColor: MaterialStateProperty.all(mainColor),
+      foregroundColor: MaterialStateProperty.all(
+        Theme.of(context).brightness == Brightness.light
+            ? Colors.black
+            : Colors.white,
+      ),
     );
   }
 

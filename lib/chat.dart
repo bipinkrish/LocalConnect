@@ -263,7 +263,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         : SelectableText(content);
   }
 
-  GestureDetector getFileShow(String filepath, IconData icon) {
+  GestureDetector getFileShow(String filepath, double size, IconData icon) {
     return GestureDetector(
       onTap: () async {
         isMobile
@@ -288,7 +288,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 Text(path.basename(filepath).length <= maxlen
                     ? path.basename(filepath)
                     : '${path.basename(filepath).substring(0, maxlen)}...'),
-                Text("${getFileSize(filepath).toStringAsFixed(2)} MB")
+                Text("${size.toStringAsFixed(2)} MB")
               ],
             ),
           ],
@@ -303,11 +303,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         return showText(message.data);
 
       case "IMAGE":
-        return getFileShow(message.data, Icons.image_outlined);
+        return getFileShow(message.data, message.size, Icons.image_outlined);
       case "VIDEO":
-        return getFileShow(message.data, Icons.videocam_outlined);
+        return getFileShow(message.data, message.size, Icons.videocam_outlined);
       case "FILE":
-        return getFileShow(message.data, Icons.insert_drive_file_outlined);
+        return getFileShow(
+            message.data, message.size, Icons.insert_drive_file_outlined);
       default:
         return const Icon(Icons.question_mark_outlined);
     }
@@ -327,14 +328,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 children: [
                   IconButton(
                     onPressed: () async {
+                      Navigator.pop(context);
                       final ImagePicker picker = ImagePicker();
                       final XFile? image =
                           await picker.pickImage(source: ImageSource.gallery);
-                      Navigator.pop(context);
+
                       if (image != null) {
                         sendFile(
                             widget.peer.ip, widget.port, image, "IMAGE", false);
-                        notifier.addMessage(image.path, true, "IMAGE");
+                        notifier.addMessage(image.path, true, "IMAGE",
+                            size: getFileSize(image.path));
                       }
                     },
                     icon: const Icon(Icons.image_outlined),
@@ -346,14 +349,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 children: [
                   IconButton(
                     onPressed: () async {
+                      Navigator.pop(context);
                       final ImagePicker picker = ImagePicker();
                       final XFile? video =
                           await picker.pickVideo(source: ImageSource.gallery);
-                      Navigator.pop(context);
+
                       if (video != null) {
                         sendFile(
                             widget.peer.ip, widget.port, video, "VIDEO", false);
-                        notifier.addMessage(video.path, true, "VIDEO");
+                        notifier.addMessage(video.path, true, "VIDEO",
+                            size: getFileSize(video.path));
                       }
                     },
                     icon: const Icon(Icons.videocam_outlined),
@@ -365,16 +370,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 children: [
                   IconButton(
                     onPressed: () async {
+                      Navigator.pop(context);
                       final FilePickerResult? files = await FilePicker.platform
                           .pickFiles(allowMultiple: true);
-                      Navigator.pop(context);
+
                       if (files != null && files.files.isNotEmpty) {
                         for (PlatformFile pfile in files.files) {
                           if (pfile.path != null) {
                             final XFile file = XFile(pfile.path ?? "/");
                             sendFile(widget.peer.ip, widget.port, file, "FILE",
                                 false);
-                            notifier.addMessage(file.path, true, "FILE");
+                            notifier.addMessage(file.path, true, "FILE",
+                                size: getFileSize(file.path));
                           }
                         }
                       }

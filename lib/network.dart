@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:localconnect/data.dart';
 import 'package:http/http.dart' as http;
+import 'package:file_picker/file_picker.dart';
 
 // server
 void startHttpServer(HttpServer? httpServer, String localIP, int port,
@@ -134,6 +135,10 @@ void sendFile(
       Uri.parse(
           "http://$ipAddress:$port?messageType=$messagePost&name=$name&type=$type&info=$info"),
       body: await file.readAsBytes());
+
+  if (isMobile) {
+    FilePicker.platform.clearTemporaryFiles();
+  }
 
   // final request = http.MultipartRequest('POST', Uri.parse(""))
   //   ..files.add(await http.MultipartFile.fromPath('file', file.path));
