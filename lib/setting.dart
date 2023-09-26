@@ -54,7 +54,7 @@ class _SettingsState extends State<Settings> {
       await Permission.manageExternalStorage.request();
     }
 
-    String? path = await FilePicker.platform.getDirectoryPath();
+    final String? path = await FilePicker.platform.getDirectoryPath();
 
     if (path != null) {
       destination = path.replaceAll('\\', '/');

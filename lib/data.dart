@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as path;
 
 ////////////////////////////////////////////////////////////// Constants
 
@@ -165,10 +166,12 @@ final chatMessagesProvider =
 class ChatMessagesNotifier extends StateNotifier<List<Message>> {
   ChatMessagesNotifier() : super([]);
   String ip = "";
+  Set<String> folders = {};
 
   void resetState() {
     state = [];
     ip = "";
+    folders = {};
   }
 
   void addMessage(String data, bool you, String type,
@@ -180,9 +183,17 @@ class ChatMessagesNotifier extends StateNotifier<List<Message>> {
     ];
   }
 
-  void addFile(List<int> data, bool you, String type, String name) async {
+  void addFile(
+    List<int> data,
+    bool you,
+    String type,
+    String name,
+  ) async {
     final destination = await getDestination();
-    final file = File("$destination/$name");
+    final finalpath = "$destination$name";
+    debugPrint("Saving to $finalpath");
+
+    final file = File(finalpath);
     await file.writeAsBytes(data);
 
     state = [
@@ -190,6 +201,35 @@ class ChatMessagesNotifier extends StateNotifier<List<Message>> {
       Message(file.path, you, formatDateTime(DateTime.now()), type,
           size: getFileSize(file.path), isInfo: false)
     ];
+  }
+
+  void addFolder(
+    List<int> data,
+    bool you,
+    String type,
+    String name,
+  ) async {
+    final destination = await getDestination();
+    final finalpath = "$destination$name";
+    final destinationFolder = Directory(path.dirname(finalpath));
+    if (!await destinationFolder.exists()) {
+      await destinationFolder.create(recursive: true);
+    }
+    debugPrint("Saving to $finalpath");
+
+    final file = File(finalpath);
+    await file.writeAsBytes(data);
+
+    final relPath = name.split("/")[1];
+    if (!folders.contains(relPath)) {
+      folders.add(relPath);
+      state = [
+        ...state,
+        Message(
+            "$destination/$relPath", you, formatDateTime(DateTime.now()), type,
+            size: 0, isInfo: false)
+      ];
+    }
   }
 }
 

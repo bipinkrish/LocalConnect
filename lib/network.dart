@@ -5,6 +5,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:localconnect/data.dart';
 import 'package:http/http.dart' as http;
 import 'package:file_picker/file_picker.dart';
+import 'package:path/path.dart' as path;
+
+///////////////////////////////////////////////////// Server
 
 // server
 void startHttpServer(HttpServer? httpServer, String localIP, int port,
@@ -14,8 +17,7 @@ void startHttpServer(HttpServer? httpServer, String localIP, int port,
 
   try {
     httpServer = await HttpServer.bind(localIP, port, shared: true);
-    debugPrint(
-        'Serving at http://${httpServer.address.host}:${httpServer.port}');
+    debugPrint('Serving at ${httpServer.address.host}:${httpServer.port}');
 
     await for (final request in httpServer) {
       final Uri uri = request.uri;
@@ -68,13 +70,13 @@ void startHttpServer(HttpServer? httpServer, String localIP, int port,
         switch (messageType) {
           case 'MESSAGE':
             final type = parsedData['type'];
-            final info = parsedData['info'];
+            final info = parsedData['info'] ?? false;
 
             if (type == "TEXT") {
               final data = await utf8.decodeStream(request);
               chatMessagesNotifier.addMessage(data, false, type ?? "TEXT",
                   info: info == "true");
-            } else {
+            } else if (type == "IMAGE" || type == "VIDEO" || type == "FILE") {
               final name = parsedData["name"];
               final List<int> payload = await request
                   .fold<List<int>>(<int>[], (a, b) => a..addAll(b));
@@ -82,7 +84,17 @@ void startHttpServer(HttpServer? httpServer, String localIP, int port,
               if (name != null && type != null) {
                 chatMessagesNotifier.addFile(payload, false, type, name);
               }
+            } else if (type == "FOLDER") {
+              final name = parsedData["name"];
+              final List<int> payload = await request
+                  .fold<List<int>>(<int>[], (a, b) => a..addAll(b));
+
+              if (name != null && type != null) {
+                chatMessagesNotifier.addFolder(payload, false, type, name);
+              }
             }
+            await request.response.close();
+            break;
           default:
             await request.response.close();
             break;
@@ -96,6 +108,8 @@ void startHttpServer(HttpServer? httpServer, String localIP, int port,
     debugPrint(e.toString());
   }
 }
+
+///////////////////////////////////////////////////// Client
 
 // asking meta data
 Future<List> askMetadataRequest(String ipAddress, int port) async {
@@ -146,17 +160,36 @@ void sendText(String ipAddress, int port, String msg, bool info) {
 }
 
 // sending file
-void sendFile(
-    String ipAddress, int port, XFile file, String type, bool info) async {
+void sendFile(String ipAddress, int port, XFile file, String type,
+    {String parentFolder = "/"}) async {
   http.post(
       Uri.parse(
-          "http://$ipAddress:$port/MESSAGE/?name=${file.name}&type=$type&info=$info"),
+          "http://$ipAddress:$port/MESSAGE/?name=$parentFolder${file.name}&type=$type"),
       body: await file.readAsBytes());
 
   if (isMobile) {
     FilePicker.platform.clearTemporaryFiles();
   }
+}
 
-  // final request = http.MultipartRequest('POST', Uri.parse(""))
-  //   ..files.add(await http.MultipartFile.fromPath('file', file.path));
+// sending folder
+void sendFolder(String ipAddress, int port, Directory folder) async {
+  if (!folder.existsSync()) {
+    debugPrint("Folder does not exist: ${folder.path}");
+    return;
+  }
+
+  final List<FileSystemEntity> entities = folder.listSync(recursive: true);
+  final baseName = "/${path.basename(folder.path)}/";
+
+  for (final entity in entities) {
+    if (entity is File) {
+      final file = XFile(entity.path);
+      final relativePath = baseName +
+          path
+              .relative(entity.path, from: folder.path)
+              .replaceFirst(file.name, "");
+      sendFile(ipAddress, port, file, "FOLDER", parentFolder: relativePath);
+    }
+  }
 }

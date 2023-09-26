@@ -402,17 +402,9 @@ class _HomePageState extends State<HomePage> {
                               onChanged: (value) {
                                 if (value != null) {
                                   localIP = value;
-                                  if (httpServer != null) {
-                                    httpServer!.close();
-                                  }
+                                  changeInInterface();
                                   startHttpServer(httpServer, localIP, port,
                                       getAcceptAns, cancelPopup);
-                                  if (discoveryTimer != null) {
-                                    discoveryTimer!.cancel();
-                                  }
-                                  if (removalTimer != null) {
-                                    removalTimer!.cancel();
-                                  }
                                   startDeviceDiscovery();
                                   refresh();
                                 }
@@ -428,6 +420,18 @@ class _HomePageState extends State<HomePage> {
               ),
       ),
     );
+  }
+
+  void changeInInterface() {
+    if (httpServer != null) {
+      httpServer!.close();
+    }
+    if (discoveryTimer != null) {
+      discoveryTimer!.cancel();
+    }
+    if (removalTimer != null) {
+      removalTimer!.cancel();
+    }
   }
 
   // some one is asking

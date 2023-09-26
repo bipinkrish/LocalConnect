@@ -1,6 +1,7 @@
 // ignore_for_file: must_be_immutable, unused_import, depend_on_referenced_packages, use_build_context_synchronously
 
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localconnect/data.dart';
@@ -264,7 +265,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         : SelectableText(content);
   }
 
-  GestureDetector getFileShow(String filepath, double size, IconData icon) {
+  GestureDetector getFileShow(String filepath, double size, IconData icon,
+      {bool folder = false}) {
     return GestureDetector(
       onTap: () async {
         isMobile
@@ -289,7 +291,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 Text(path.basename(filepath).length <= maxlen
                     ? path.basename(filepath)
                     : '${path.basename(filepath).substring(0, maxlen)}...'),
-                Text("${size.toStringAsFixed(2)} MB")
+                if (!folder) Text("${size.toStringAsFixed(2)} MB")
               ],
             ),
           ],
@@ -310,6 +312,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       case "FILE":
         return getFileShow(
             message.data, message.size, Icons.insert_drive_file_outlined);
+      case "FOLDER":
+        return getFileShow(message.data, 0, Icons.folder_open_outlined,
+            folder: true);
       default:
         return const Icon(Icons.question_mark_outlined);
     }
@@ -335,8 +340,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           await picker.pickImage(source: ImageSource.gallery);
 
                       if (image != null) {
-                        sendFile(
-                            widget.peer.ip, widget.port, image, "IMAGE", false);
+                        sendFile(widget.peer.ip, widget.port, image, "IMAGE");
                         notifier.addMessage(image.path, true, "IMAGE",
                             size: getFileSize(image.path));
                       }
@@ -356,8 +360,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           await picker.pickVideo(source: ImageSource.gallery);
 
                       if (video != null) {
-                        sendFile(
-                            widget.peer.ip, widget.port, video, "VIDEO", false);
+                        sendFile(widget.peer.ip, widget.port, video, "VIDEO");
                         notifier.addMessage(video.path, true, "VIDEO",
                             size: getFileSize(video.path));
                       }
@@ -379,8 +382,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         for (PlatformFile pfile in files.files) {
                           if (pfile.path != null) {
                             final XFile file = XFile(pfile.path ?? "/");
-                            sendFile(widget.peer.ip, widget.port, file, "FILE",
-                                false);
+                            sendFile(widget.peer.ip, widget.port, file, "FILE");
                             notifier.addMessage(file.path, true, "FILE",
                                 size: getFileSize(file.path));
                           }
@@ -389,7 +391,27 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     },
                     icon: const Icon(Icons.insert_drive_file_outlined),
                   ),
-                  const Text("File")
+                  const Text("File"),
+                ],
+              ),
+              Column(
+                children: [
+                  IconButton(
+                    onPressed: () async {
+                      Navigator.pop(context);
+                      final String? directoryPath =
+                          await FilePicker.platform.getDirectoryPath();
+
+                      if (directoryPath != null) {
+                        final Directory dir = Directory.fromRawPath(
+                            Uint8List.fromList(directoryPath.codeUnits));
+                        sendFolder(widget.peer.ip, widget.port, dir);
+                        notifier.addMessage(dir.path, true, "FOLDER", size: 0);
+                      }
+                    },
+                    icon: const Icon(Icons.folder_open_outlined),
+                  ),
+                  const Text("Folder"),
                 ],
               ),
             ],
