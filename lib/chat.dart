@@ -173,7 +173,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         _showAttachmentOptions();
                       },
                     ),
-                  if (_messageController.text.isEmpty)
+                  if (isMobile && _messageController.text.isEmpty)
                     IconButton(
                       color: mainColor,
                       icon: const Icon(
@@ -188,6 +188,24 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           sendFile(widget.peer.ip, widget.port, image, "IMAGE");
                           notifier.addMessage(image.path, true, "IMAGE",
                               size: getFileSize(image.path));
+                        }
+                      },
+                    ),
+                  if (isMobile && _messageController.text.isEmpty)
+                    IconButton(
+                      color: mainColor,
+                      icon: const Icon(
+                        Icons.videocam_outlined,
+                      ),
+                      onPressed: () async {
+                        final ImagePicker picker = ImagePicker();
+                        final XFile? video =
+                            await picker.pickVideo(source: ImageSource.camera);
+
+                        if (video != null) {
+                          sendFile(widget.peer.ip, widget.port, video, "VIDEO");
+                          notifier.addMessage(video.path, true, "VIDEO",
+                              size: getFileSize(video.path));
                         }
                       },
                     ),
@@ -328,7 +346,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       case "IMAGE":
         return getFileShow(message.data, message.size, Icons.image_outlined);
       case "VIDEO":
-        return getFileShow(message.data, message.size, Icons.videocam_outlined);
+        return getFileShow(
+            message.data, message.size, Icons.video_file_outlined);
       case "FILE":
         return getFileShow(
             message.data, message.size, Icons.insert_drive_file_outlined);
