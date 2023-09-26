@@ -146,6 +146,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       controller: _messageController,
                       autofocus: isComputer,
                       maxLines: null,
+                      onChanged: (value) => refresh(),
                       decoration: InputDecoration(
                         hintText: 'Send a message...',
                         filled: true,
@@ -162,25 +163,45 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       ),
                     ),
                   ),
-                  IconButton(
-                    color: mainColor,
-                    icon: const Icon(
-                      Icons.attach_file_outlined,
+                  if (_messageController.text.isEmpty)
+                    IconButton(
+                      color: mainColor,
+                      icon: const Icon(
+                        Icons.attach_file_outlined,
+                      ),
+                      onPressed: () {
+                        _showAttachmentOptions();
+                      },
                     ),
-                    onPressed: () {
-                      _showAttachmentOptions();
-                    },
-                  ),
-                  IconButton(
-                    color: mainColor,
-                    icon: const Icon(
-                      Icons.send_outlined,
+                  if (_messageController.text.isEmpty)
+                    IconButton(
+                      color: mainColor,
+                      icon: const Icon(
+                        Icons.camera_alt_outlined,
+                      ),
+                      onPressed: () async {
+                        final ImagePicker picker = ImagePicker();
+                        final XFile? image =
+                            await picker.pickImage(source: ImageSource.camera);
+
+                        if (image != null) {
+                          sendFile(widget.peer.ip, widget.port, image, "IMAGE");
+                          notifier.addMessage(image.path, true, "IMAGE",
+                              size: getFileSize(image.path));
+                        }
+                      },
                     ),
-                    onPressed: () {
-                      _sendTextMessage(_messageController.text);
-                      if (isComputer) _messageNode.requestFocus();
-                    },
-                  ),
+                  if (_messageController.text.isNotEmpty)
+                    IconButton(
+                      color: mainColor,
+                      icon: const Icon(
+                        Icons.send_outlined,
+                      ),
+                      onPressed: () {
+                        _sendTextMessage(_messageController.text);
+                        if (isComputer) _messageNode.requestFocus();
+                      },
+                    ),
                 ],
               ),
             ),
@@ -304,7 +325,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     switch (message.type) {
       case "TEXT":
         return showText(message.data);
-
       case "IMAGE":
         return getFileShow(message.data, message.size, Icons.image_outlined);
       case "VIDEO":
@@ -336,10 +356,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     onPressed: () async {
                       Navigator.pop(context);
                       final ImagePicker picker = ImagePicker();
-                      final XFile? image =
-                          await picker.pickImage(source: ImageSource.gallery);
+                      final List<XFile> images = await picker.pickMultiImage();
 
-                      if (image != null) {
+                      for (XFile image in images) {
                         sendFile(widget.peer.ip, widget.port, image, "IMAGE");
                         notifier.addMessage(image.path, true, "IMAGE",
                             size: getFileSize(image.path));
@@ -356,10 +375,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     onPressed: () async {
                       Navigator.pop(context);
                       final ImagePicker picker = ImagePicker();
-                      final XFile? video =
-                          await picker.pickVideo(source: ImageSource.gallery);
+                      final List<XFile> videos =
+                          await picker.pickMultipleMedia();
 
-                      if (video != null) {
+                      for (XFile video in videos) {
                         sendFile(widget.peer.ip, widget.port, video, "VIDEO");
                         notifier.addMessage(video.path, true, "VIDEO",
                             size: getFileSize(video.path));

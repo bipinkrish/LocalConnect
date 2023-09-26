@@ -8,7 +8,7 @@ import 'package:path/path.dart' as path;
 
 ////////////////////////////////////////////////////////////// Constants
 
-const String version = "v1.3.3";
+const String version = "v1.3.4";
 const String copyright = "© 2023 Bipin";
 const Color mainColor = Colors.deepOrange;
 bool isComputer = Platform.isWindows || Platform.isLinux || Platform.isMacOS;
@@ -183,51 +183,38 @@ class ChatMessagesNotifier extends StateNotifier<List<Message>> {
     ];
   }
 
-  void addFile(
-    List<int> data,
-    bool you,
-    String type,
-    String name,
-  ) async {
+  void addFile(List<int> data, bool you, String type, String name,
+      {bool folder = false}) async {
     final destination = await getDestination();
     final finalpath = "$destination$name";
     debugPrint("Saving to $finalpath");
 
-    final file = File(finalpath);
-    await file.writeAsBytes(data);
-
-    state = [
-      ...state,
-      Message(file.path, you, formatDateTime(DateTime.now()), type,
-          size: getFileSize(file.path), isInfo: false)
-    ];
-  }
-
-  void addFolder(
-    List<int> data,
-    bool you,
-    String type,
-    String name,
-  ) async {
-    final destination = await getDestination();
-    final finalpath = "$destination$name";
-    final destinationFolder = Directory(path.dirname(finalpath));
-    if (!await destinationFolder.exists()) {
-      await destinationFolder.create(recursive: true);
+    if (folder) {
+      final destinationFolder = Directory(path.dirname(finalpath));
+      if (!await destinationFolder.exists()) {
+        await destinationFolder.create(recursive: true);
+      }
     }
-    debugPrint("Saving to $finalpath");
 
     final file = File(finalpath);
     await file.writeAsBytes(data);
 
-    final relPath = name.split("/")[1];
-    if (!folders.contains(relPath)) {
-      folders.add(relPath);
+    if (folder) {
+      final relPath = name.split("/")[1];
+      if (!folders.contains(relPath)) {
+        folders.add(relPath);
+        state = [
+          ...state,
+          Message("$destination/$relPath", you, formatDateTime(DateTime.now()),
+              type,
+              size: 0, isInfo: false)
+        ];
+      }
+    } else {
       state = [
         ...state,
-        Message(
-            "$destination/$relPath", you, formatDateTime(DateTime.now()), type,
-            size: 0, isInfo: false)
+        Message(file.path, you, formatDateTime(DateTime.now()), type,
+            size: getFileSize(file.path), isInfo: false)
       ];
     }
   }

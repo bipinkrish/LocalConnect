@@ -76,21 +76,14 @@ void startHttpServer(HttpServer? httpServer, String localIP, int port,
               final data = await utf8.decodeStream(request);
               chatMessagesNotifier.addMessage(data, false, type ?? "TEXT",
                   info: info == "true");
-            } else if (type == "IMAGE" || type == "VIDEO" || type == "FILE") {
+            } else {
               final name = parsedData["name"];
               final List<int> payload = await request
                   .fold<List<int>>(<int>[], (a, b) => a..addAll(b));
 
               if (name != null && type != null) {
-                chatMessagesNotifier.addFile(payload, false, type, name);
-              }
-            } else if (type == "FOLDER") {
-              final name = parsedData["name"];
-              final List<int> payload = await request
-                  .fold<List<int>>(<int>[], (a, b) => a..addAll(b));
-
-              if (name != null && type != null) {
-                chatMessagesNotifier.addFolder(payload, false, type, name);
+                chatMessagesNotifier.addFile(payload, false, type, name,
+                    folder: type == "FOLDER");
               }
             }
             await request.response.close();

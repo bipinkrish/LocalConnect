@@ -368,7 +368,7 @@ class _HomePageState extends State<HomePage> {
                   Icon(thisSysIcon),
                   getcol("Device", localName),
                   getcol("IP", localIP),
-                  // getcol("Port", port.toString()),
+                  if(isComputer) getcol("Port", port.toString()),
                   Column(
                     children: [
                       const Text("Interface"),
