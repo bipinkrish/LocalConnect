@@ -311,7 +311,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: result.tar.gz
-          asset_name: LocalConnect-${{ needs.build.outputs.version }}-linux-x86-64.tar.gz
+          asset_name: LocalConnect-${{ needs.build.outputs.version }}-linux-portable.tar.gz
           asset_content_type: application/gzip
 
       # DEB
@@ -331,7 +331,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: result.deb
-          asset_name: LocalConnect-${{ needs.build.outputs.version }}-linux-x86-64.deb
+          asset_name: LocalConnect-${{ needs.build.outputs.version }}-linux.deb
           asset_content_type: application/vnd.debian.binary-package
 
       # WINDOWS ZIP
@@ -351,7 +351,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: result.zip
-          asset_name: LocalConnect-${{ needs.build.outputs.version }}-windows-x86-64.zip
+          asset_name: LocalConnect-${{ needs.build.outputs.version }}-windows-portable.zip
           asset_content_type: application/zip
       
       # AppImage
